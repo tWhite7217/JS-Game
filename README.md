@@ -20,6 +20,12 @@ Music from [Bensound.com]:
 Sound effects from freesound.org:
 * [Laser] by [bubaproducer][buba]
 * [Damage] by [Iwan ‘qubodup’ Gabovitch][iwan] under [CC-BY 3.0 License][license]
+
+Images:
+* [Heart] by [theinstantmatrix]
+* [Anti symbol] from [Unicode]
+* [Music note] by [ruhbastard]
+* [Speaker symbol] by [Mobius]
   
 [OG]: https://github.com/tWhite7217/CISC181Game
 [Tommy White]: https://github.com/tWhite7217
@@ -30,3 +36,11 @@ Sound effects from freesound.org:
 [damage]: http://www.freesound.org/people/qubodup/sounds/211634
 [iwan]: http://freesound.org/people/qubodup
 [license]: http://creativecommons.org/licenses/by/3.0/legalcode
+[heart]: https://commons.wikimedia.org/wiki/File:Pixel_heart_red.svg
+[theinstantmatrix]: https://en.wikipedia.org/wiki/User:Theinstantmatrix
+[anti symbol]: https://en.wikipedia.org/wiki/File:Anti.svg
+[unicode]: https://en.wikipedia.org/wiki/Unicode
+[music note]: https://pixabay.com/vectors/music-note-music-note-musical-notes-1967480/
+[ruhbastard]: https://pixabay.com/users/ruhbastard-3293703/
+[speaker symbol]: https://en.wikipedia.org/wiki/File:Speaker_Icon.svg
+[Mobius]: https://en.wikipedia.org/wiki/User:Mobius
