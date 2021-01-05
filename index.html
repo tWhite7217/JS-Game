@@ -1,459 +1,513 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8" />
+    <meta name="viewport" charset="utf-8"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>CISC 181 Game - JavaScript Edition</title>
     <style>
-    	* { padding: 0; margin: 0; }
-    	canvas { background: rgb(0, 0, 0); display: block; margin: 0 auto; }
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        canvas {
+            background: rgb(0, 0, 0);
+            display: block;
+            margin: 0 auto;
+        }
     </style>
 </head>
+
 <body>
 
-<canvas id="myCanvas"></canvas>
+    <canvas id="myCanvas"></canvas>
 
-<div style="display:none;">
-    <img id="heart"
-        src="heart.png">
-    <img id="music note"
-        src="white music note.png">
-    <img id="speaker symbol"
-        src="white speaker symbol.png">
-    <img id="no symbol"
-        src="no symbol.png">
-</div>
+    <div style="display:none;">
+        <img id="heart" src="heart.png">
+        <img id="music note" src="white music note.png">
+        <img id="speaker symbol" src="white speaker symbol.png">
+        <img id="no symbol" src="no symbol.png">
+    </div>
 
-<script>
+    <script>
+        const minCount = 10;
+        const countRange = 15;
+        var count = 0;
 
-    const minCount = 10;
-    const countRange = 15;
-    var count = 0;
+        var interval;
 
-    var interval;
+        const heartImage = document.getElementById('heart');
+        const musicImage = document.getElementById('music note');
+        const speakerImage = document.getElementById('speaker symbol');
+        const noImage = document.getElementById('no symbol');
 
-    const heartImage = document.getElementById('heart');
-    const musicImage = document.getElementById('music note');
-    const speakerImage = document.getElementById('speaker symbol');
-    const noImage = document.getElementById('no symbol');
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-    var canvas = document.getElementById("myCanvas");
-    var ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+        var upPressed = false;
+        var upLock = false;
+        var downPressed = false;
+        var downLock = false;
+        var spacePressed = false;
+        var spaceLock = false;
 
-    var upPressed = false;
-    var upLock = false;
-    var downPressed = false;
-    var downLock = false;
-    var spacePressed = false;
-    var spaceLock = false;
+        var canvasWidth;
+        var canvasHeight;
+        var gameWidth;
+        var gameHeight;
+        var gameXoffset;
+        var gameYoffset;
+        var laneHeight;
+        var targetRadius;
+        var obstacleRadius;
+        var playerRadius;
+        var scoreXposition;
+        var scoreYposition;
+        var healthXposition;
+        var healthXdistance;
+        var healthYposition;
+        var soundXposition;
+        var soundYposition;
 
-    var canvasWidth;
-    var canvasHeight;
-    var gameWidth;
-    var gameHeight;
-    var gameXoffset;
-    var gameYoffset;
-    var laneHeight;
-    var targetRadius;
-    var obstacleRadius;
-    var playerRadius;
-    var scoreXposition;
-    var scoreYposition;
-    var healthXposition;
-    var healthXdistance;
-    var healthYposition;
-    var soundXposition;
-    var soundYposition;
-
-    class Player {
-        constructor() {
-            this.score = 0;
-            this.health = 3;
-            this.yPosition = 2;
-        }
-    }
-
-    class Obstacle {
-        constructor(yPos) {
-            this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
-            this.yPosition = yPos;
-            this.hasDetected = false;
-        }
-    }
-
-    class Target {
-        constructor(size, yPos, givesHealth) {
-            this.size = size;
-            this.givesHealth = givesHealth;
-
-            if (givesHealth) {
-                this.pointValue = 0;
-            } else {
-                this.pointValue = 3 - size;
+        class Player {
+            constructor() {
+                this.score = 0;
+                this.health = 3;
+                this.yPosition = 2;
             }
-            this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
-
-            this.yPosition = yPos;
         }
-    }
 
-    var targets = [];
-    var obstacles = [];
-    var player = new Player();
-
-    var audio = 0;
-    var oldVolume;
-    var song = new Audio('silence.mp3');
-    var laserSound = new Audio('laser-shot-quiet.mp3');
-    var damageTakenSound = new Audio('damage.mp3');
-
-    document.addEventListener("keydown", keyDownHandler, false);
-    document.addEventListener("keyup", keyUpHandler, false);
-
-    function keyDownHandler(e) {
-        if((e.key === "Up" || e.key === "ArrowUp") && !upLock) {
-            upPressed = true;
-            upLock = true;
-        }
-        else if(e.key === "Down" || e.key === "ArrowDown" && !downLock) {
-            downPressed = true;
-            downLock = true;
-        }
-        else if((e.key === " " || e.key === "Spacebar") && !spaceLock) {
-            spacePressed = true;
-            spaceLock = true;
-        } else if (e.key === "s") {
-            audio = !audio;
-        } else if (e.key === "m") {
-            song.volume = !song.volume;
-        }
-    }
-
-    function keyUpHandler(e) {
-        if(e.key === "Up" || e.key === "ArrowUp") {
-            upLock = false;
-        }
-        else if(e.key === "Down" || e.key === "ArrowDown") {
-            downLock = false;
-        }
-        else if(e.key === " " || e.key === "Spacebar") {
-            spaceLock = false;
-        }
-    }
-
-    function targetHit() {
-        if (spacePressed) {
-            if (audio) {
-                laserSound.play();
+        class Obstacle {
+            constructor(yPos) {
+                this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
+                this.yPosition = yPos;
+                this.hasDetected = false;
             }
-            spacePressed = false;
-            for (var i = 0; i < targets.length; i++) {
-                if (Math.abs(targets[i].xPosition - player.xPosition) <= (targetRadius + (targetRadius * (targets[i].size))) && targets[i].yPosition === player.yPosition) {
-                    if (targets[i].givesHealth) {
-                        player.health += 1;
+        }
+
+        class Target {
+            constructor(size, yPos, givesHealth) {
+                this.size = size;
+                this.givesHealth = givesHealth;
+
+                if (givesHealth) {
+                    this.pointValue = 0;
+                } else {
+                    this.pointValue = 3 - size;
+                }
+                this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
+
+                this.yPosition = yPos;
+            }
+        }
+
+        var targets = [];
+        var obstacles = [];
+        var player = new Player();
+
+        var audio = 0;
+        var oldVolume;
+        var song = new Audio('silence.mp3');
+        var laserSound = new Audio('laser-shot-quiet.mp3');
+        var damageTakenSound = new Audio('damage.mp3');
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+        document.addEventListener("touchstart", touchHandler);
+
+        function keyDownHandler(e) {
+            if ((e.key === "Up" || e.key === "ArrowUp") && !upLock) {
+                upPressed = true;
+                upLock = true;
+            } else if (e.key === "Down" || e.key === "ArrowDown" && !downLock) {
+                downPressed = true;
+                downLock = true;
+            } else if ((e.key === " " || e.key === "Spacebar") && !spaceLock) {
+                spacePressed = true;
+                spaceLock = true;
+            } else if (e.key === "s") {
+                audio = !audio;
+            } else if (e.key === "m") {
+                song.volume = !song.volume;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === "Up" || e.key === "ArrowUp") {
+                upLock = false;
+            } else if (e.key === "Down" || e.key === "ArrowDown") {
+                downLock = false;
+            } else if (e.key === " " || e.key === "Spacebar") {
+                spaceLock = false;
+            }
+        }
+
+        function touchHandler(e) {
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].clientX <= canvasWidth / 2) { // Left half pressed
+                    if (e.touches[i].clientY <= canvasHeight / 2) { // Top left pressed
+                        upPressed = true;
+                    } else { // Bottom left pressed
+                        downPressed = true;
                     }
-                    player.score += targets[i].pointValue;
+                } else if (e.touches[i].clientY > soundYposition + 3 *
+                    targetRadius) { // Right half below sound options pressed
+                    spacePressed = true;
+                } else if (e.touches[i].clientX >= soundXposition && e.touches[i].clientX < soundXposition +
+                    targetRadius * 3.25) { // Music button pressed
+                    song.volume = !song.volume;
+                } else if (e.touches[i].clientX > soundXposition + targetRadius * 3.5 && e.touches[i].clientX <=
+                    soundXposition + targetRadius * 8) { // Sound effect button pressed
+                    audio = !audio;
+                }
+            }
+        }
+
+        function targetHit() {
+            if (spacePressed) {
+                if (audio) {
+                    laserSound.play();
+                }
+                spacePressed = false;
+                for (var i = 0; i < targets.length; i++) {
+                    if (Math.abs(targets[i].xPosition - player.xPosition) <= (targetRadius + (targetRadius * (
+                            targets[i]
+                            .size))) && targets[i].yPosition === player.yPosition) {
+                        if (targets[i].givesHealth) {
+                            player.health += 1;
+                        }
+                        player.score += targets[i].pointValue;
+                        targets.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
+        }
+
+        function obstacleHit() {
+            for (var i = 0; i < obstacles.length; i++) {
+                if ((Math.abs(obstacles[i].xPosition - player.xPosition) <= obstacleRadius) && obstacles[i]
+                    .yPosition === player.yPosition && !(obstacles[i].hasDetected)) {
+                    player.health--;
+                    obstacles[i].hasDetected = true;
+                    if (audio) {
+                        damageTakenSound.play();
+                    }
+                }
+            }
+        }
+
+        function move() {
+            if (downPressed) {
+                if (player.yPosition != 3) {
+                    player.yPosition += 1;
+                }
+                downPressed = false;
+            }
+            if (upPressed) {
+                if (player.yPosition != 1) {
+                    player.yPosition -= 1;
+                }
+                upPressed = false;
+            }
+        }
+
+        function moveTargetsAndObstacles() {
+            for (var i = 0; i < targets.length; i++) {
+                targets[i].xPosition -= gameWidth / 60;
+                if (targets[i].xPosition < 0 - (targetRadius + (targets[i] * targetRadius))) {
                     targets.splice(i, 1);
                     i--;
                 }
             }
-        }
-    }
-
-    function obstacleHit() {
-        for (var i = 0; i < obstacles.length; i++) {
-            if ((Math.abs(obstacles[i].xPosition - player.xPosition) <= obstacleRadius) && obstacles[i].yPosition === player.yPosition && !(obstacles[i].hasDetected)) {
-                player.health--;
-                obstacles[i].hasDetected = true;
-                if (audio) {
-                    damageTakenSound.play();
+            for (var i = 0; i < obstacles.length; i++) {
+                obstacles[i].xPosition -= gameWidth / 60;
+                if (obstacles[i].xPosition < 0 - obstacleRadius) {
+                    obstacles.splice(i, 1);
+                    i--;
                 }
             }
         }
-    }
 
-    function move() {
-        if (downPressed) {
-            if (player.yPosition != 3) {
-                player.yPosition += 1;
-            }
-            downPressed = false;
-        }
-        if (upPressed) {
-            if (player.yPosition != 1) {
-                player.yPosition -= 1;
-            }
-            upPressed = false;
-        }
-    }
-
-    function moveTargetsAndObstacles() {
-        for (var i = 0; i < targets.length; i++) {
-            targets[i].xPosition -= gameWidth / 60;
-            if (targets[i].xPosition < 0 - (targetRadius + (targets[i] * targetRadius))) {
-                targets.splice(i, 1);
-                i--;
+        function manageMusic() {
+            if (song.paused) {
+                oldVolume = song.volume;
+                switch (Math.floor(Math.random() * 4)) {
+                    case 0:
+                        song = new Audio('bensound-scifi.mp3');
+                        break;
+                    case 1:
+                        song = new Audio('bensound-newdawn.mp3');
+                        break;
+                    case 2:
+                        song = new Audio('bensound-evolution.mp3');
+                        break;
+                    case 3:
+                        song = new Audio('bensound-deepblue.mp3');
+                        break;
+                }
+                song.play();
+                song.volume = oldVolume;
             }
         }
-        for (var i = 0; i < obstacles.length; i++) {
-            obstacles[i].xPosition -= gameWidth / 60;
-            if (obstacles[i].xPosition < 0 - obstacleRadius) {
-                obstacles.splice(i, 1);
-                i--;
-            }
-        }
-    }
 
-    function manageMusic() {
-        if (song.paused) {
-            oldVolume = song.volume;
-            switch(Math.floor(Math.random() * 4)) {
-                case 0:
-                    song = new Audio('bensound-scifi.mp3');
-                    break;
-                case 1:
-                    song = new Audio('bensound-newdawn.mp3');
-                    break;
-                case 2:
-                    song = new Audio('bensound-evolution.mp3');
-                    break;
-                case 3:
-                    song = new Audio('bensound-deepblue.mp3');
-                    break;
-            }
-            song.play();
-            song.volume = oldVolume;
-        }
-    }
-
-    function tick () {
-        if (count >= minCount + Math.floor(countRange / (1 + (player.score / 20)))) {
-            spawn(Math.floor(Math.random() * 11));
-            count = 0;
-        } else {count++}
-        targetHit();
-        obstacleHit();
-        move();
-        moveTargetsAndObstacles();
-        updateUI();
-        checkForGameOver();
-        manageMusic();
-    }
-
-    function spawn(type) {
-        var healthSpawn = Math.floor(Math.random() * 100);
-        if (healthSpawn === 0) {
-            targets.push(new Target(0, Math.floor(type/4) + 1, true));
-        } else {
-            if (type < 3) {
-                spawnObstacleOrTarget(Math.floor(Math.random() * 2), type + 1);
-            } else if (type < 6) {
-                spawnObstacleAndTarget(Math.floor(Math.random() * 3) + 1);
+        function tick() {
+            if (count >= minCount + Math.floor(countRange / (1 + (player.score / 20)))) {
+                spawn(Math.floor(Math.random() * 11));
+                count = 0;
             } else {
-                spawnTwoObstacles();
+                count++
+            }
+            targetHit();
+            obstacleHit();
+            move();
+            moveTargetsAndObstacles();
+            updateUI();
+            checkForGameOver();
+            manageMusic();
+        }
+
+        function spawn(type) {
+            var healthSpawn = Math.floor(Math.random() * 100);
+            if (healthSpawn === 0) {
+                targets.push(new Target(0, Math.floor(type / 4) + 1, true));
+            } else {
+                if (type < 3) {
+                    spawnObstacleOrTarget(Math.floor(Math.random() * 2), type + 1);
+                } else if (type < 6) {
+                    spawnObstacleAndTarget(Math.floor(Math.random() * 3) + 1);
+                } else {
+                    spawnTwoObstacles();
+                }
+            }
+
+        }
+
+        function spawnObstacleOrTarget(obstacleOrTarget, yPos) {
+            if (obstacleOrTarget) {
+                targets.push(new Target(Math.floor(Math.random() * 3), yPos, false));
+            } else {
+                obstacles.push(new Obstacle(yPos));
             }
         }
 
-    }
-
-    function spawnObstacleOrTarget(obstacleOrTarget, yPos) {
-        if (obstacleOrTarget) {
-            targets.push(new Target(Math.floor(Math.random() * 3), yPos, false));
-        } else {
-            obstacles.push(new Obstacle(yPos));
-        }
-    }
-
-    // A helper function of spawn
-    function spawnObstacleAndTarget(obstacleYPos) {
-        obstacles.push(new Obstacle(obstacleYPos));
-        if (Math.floor(Math.random() * 2)) {
-            targets.push(new Target(Math.floor(Math.random() * 3), 2 - Math.floor(obstacleYPos / 2)));
-        } else {
-            targets.push(new Target(Math.floor(Math.random() * 3), 3 - Math.floor(obstacleYPos / 3)));
-        }
-    }
-
-    /*  
-    A helper function of spawn
-    Spawns two obstacles
-    emptyOrTarget determines if line without obstacle gets targer or remains empty
-    */
-    function spawnTwoObstacles() {
-        var obstacleLines = Math.floor(Math.random() * 3);
-        obstacles.push(new Obstacle(1 + Math.floor(obstacleLines / 2)));
-        obstacles.push(new Obstacle(2 + Math.ceil(obstacleLines / 2)));
-        /*if (emptyOrTarget) {
-            targets.push(new Target(Math.floor(Math.random() * 3), 3 - obstacleLines, false));
-        }*/
-    }
-
-    function updateUI() {
-        updateUIVariables();
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        ctx.beginPath();
-        ctx.rect(gameXoffset, gameYoffset + laneHeight - 1, gameWidth, 2);
-        ctx.rect(gameXoffset, gameYoffset + (laneHeight * 2) - 1, gameWidth, 2);
-        ctx.rect(gameXoffset, gameYoffset + (laneHeight * 3) - 1, gameWidth, 2);
-        ctx.fillStyle = "rgb(221, 160, 221)";
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.font = `${gameWidth / 24}px courier`;
-        ctx.fillText(`Score: ${player.score}`, gameXoffset + scoreXposition, gameYoffset + scoreYposition);
-        ctx.fillText('m:', soundXposition, soundYposition);
-        ctx.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
-
-        for (var i = 0; i < player.health; i++) {
-            ctx.drawImage(heartImage, gameXoffset + healthXposition + (healthXdistance * i), gameYoffset + healthYposition, targetRadius * 2, targetRadius * 2);
-        }
-
-        for (var i = 0; i < targets.length; i++) {
-            if (targets[i].givesHealth) {
-                ctx.drawImage(heartImage, gameXoffset + targets[i].xPosition - targetRadius, gameYoffset + (targets[i].yPosition * laneHeight) - targetRadius, targetRadius * 2, targetRadius * 2);
+        // A helper function of spawn
+        function spawnObstacleAndTarget(obstacleYPos) {
+            obstacles.push(new Obstacle(obstacleYPos));
+            if (Math.floor(Math.random() * 2)) {
+                targets.push(new Target(Math.floor(Math.random() * 3), 2 - Math.floor(obstacleYPos / 2)));
             } else {
+                targets.push(new Target(Math.floor(Math.random() * 3), 3 - Math.floor(obstacleYPos / 3)));
+            }
+        }
+
+        /*  
+        A helper function of spawn
+        Spawns two obstacles
+        emptyOrTarget determines if line without obstacle gets targer or remains empty
+        */
+        function spawnTwoObstacles() {
+            var obstacleLines = Math.floor(Math.random() * 3);
+            obstacles.push(new Obstacle(1 + Math.floor(obstacleLines / 2)));
+            obstacles.push(new Obstacle(2 + Math.ceil(obstacleLines / 2)));
+            /*if (emptyOrTarget) {
+                targets.push(new Target(Math.floor(Math.random() * 3), 3 - obstacleLines, false));
+            }*/
+        }
+
+        function updateUI() {
+            updateUIVariables();
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            ctx.beginPath();
+            ctx.rect(gameXoffset, gameYoffset + laneHeight - 1, gameWidth, 2);
+            ctx.rect(gameXoffset, gameYoffset + (laneHeight * 2) - 1, gameWidth, 2);
+            ctx.rect(gameXoffset, gameYoffset + (laneHeight * 3) - 1, gameWidth, 2);
+            ctx.fillStyle = "rgb(221, 160, 221)";
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.fillStyle = "rgb(255, 255, 255)";
+            ctx.font = `${gameWidth / 24}px courier`;
+            ctx.fillText(`Score: ${player.score}`, gameXoffset + scoreXposition, gameYoffset + scoreYposition);
+            ctx.fillText('m:', soundXposition, soundYposition);
+            ctx.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
+
+            for (var i = 0; i < player.health; i++) {
+                ctx.drawImage(heartImage, gameXoffset + healthXposition + (healthXdistance * i), gameYoffset +
+                    healthYposition, targetRadius * 2, targetRadius * 2);
+            }
+
+            for (var i = 0; i < targets.length; i++) {
+                if (targets[i].givesHealth) {
+                    ctx.drawImage(heartImage, gameXoffset + targets[i].xPosition - targetRadius, gameYoffset + (
+                        targets[
+                            i].yPosition * laneHeight) - targetRadius, targetRadius * 2, targetRadius * 2);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(gameXoffset + targets[i].xPosition, gameYoffset + targets[i].yPosition * laneHeight, (
+                        targets[i].size * targetRadius) + targetRadius, 0, 2 * Math.PI);
+                    ctx.fillStyle = "rgb(34, 139, 34)";
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+
+            for (var i = 0; i < obstacles.length; i++) {
                 ctx.beginPath();
-                ctx.arc(gameXoffset + targets[i].xPosition, gameYoffset + targets[i].yPosition * laneHeight, (targets[i].size * targetRadius) + targetRadius, 0, 2*Math.PI);
-                ctx.fillStyle = "rgb(34, 139, 34)";
+                ctx.arc(gameXoffset + obstacles[i].xPosition, gameYoffset + obstacles[i].yPosition * laneHeight,
+                    obstacleRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = "rgb(220, 20, 60)";
                 ctx.fill();
                 ctx.closePath();
             }
-        }
 
-        for (var i = 0; i < obstacles.length; i++) {
             ctx.beginPath();
-            ctx.arc(gameXoffset + obstacles[i].xPosition, gameYoffset + obstacles[i].yPosition * laneHeight, obstacleRadius, 0, 2*Math.PI);
-            ctx.fillStyle = "rgb(220, 20, 60)";
+            ctx.arc(gameXoffset + player.xPosition, gameYoffset + player.yPosition * laneHeight, playerRadius, 0,
+                2 *
+                Math.PI);
+            ctx.lineTo(gameXoffset + player.xPosition - playerRadius, gameYoffset + player.yPosition * laneHeight);
+            ctx.moveTo(gameXoffset + player.xPosition, gameYoffset + (player.yPosition * laneHeight) -
+                playerRadius);
+            ctx.lineTo(gameXoffset + player.xPosition, gameYoffset + (player.yPosition * laneHeight) +
+                playerRadius);
+            ctx.strokeStyle = "rgb(255, 255, 255)";
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.rect(0, gameYoffset, gameXoffset, gameHeight);
+            ctx.rect(gameXoffset + gameWidth, gameYoffset, gameXoffset, gameHeight);
+            ctx.fillStyle = "rgb(0, 0, 0)";
             ctx.fill();
             ctx.closePath();
-        }
 
-        ctx.beginPath();
-        ctx.arc(gameXoffset + player.xPosition, gameYoffset + player.yPosition * laneHeight, playerRadius, 0, 2*Math.PI);
-        ctx.lineTo(gameXoffset + player.xPosition - playerRadius, gameYoffset + player.yPosition * laneHeight);
-        ctx.moveTo(gameXoffset + player.xPosition, gameYoffset + (player.yPosition * laneHeight) - playerRadius);
-        ctx.lineTo(gameXoffset + player.xPosition, gameYoffset + (player.yPosition * laneHeight) + playerRadius);
-        ctx.strokeStyle = "rgb(255, 255, 255)";
-        ctx.stroke();
-        ctx.closePath();
+            ctx.beginPath();
+            ctx.rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
+            ctx.strokeStyle = "rgb(221, 160, 221)";
+            ctx.stroke();
+            ctx.closePath();
 
-        ctx.beginPath();
-        ctx.rect(0, gameYoffset, gameXoffset, gameHeight);
-        ctx.rect(gameXoffset + gameWidth, gameYoffset, gameXoffset, gameHeight);
-        ctx.fillStyle = "rgb(0, 0, 0)";
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
-        ctx.strokeStyle = "rgb(221, 160, 221)";
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.drawImage(musicImage, soundXposition + targetRadius, soundYposition, targetRadius * 2, targetRadius * 2);
-        if (!song.volume) {
-            ctx.drawImage(noImage, soundXposition + targetRadius, soundYposition, targetRadius * 2, targetRadius * 2);
-        }
-        ctx.drawImage(speakerImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2, targetRadius * 2);
-        if (!audio) {
-            ctx.drawImage(noImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2, targetRadius * 2);
-        }
-    }
-
-    function updateUIVariables() {
-        if (canvasWidth != window.innerWidth || canvasHeight != window.innerHeight) { 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            canvasWidth = canvas.clientWidth;
-            canvasHeight = canvas.clientHeight;
-            if (canvasHeight < canvasWidth * 3 / 4) {
-                gameHeight = (canvasHeight * 4) / 5;
-                gameWidth = (gameHeight * 4) / 3;
-            } else {
-                gameWidth = (canvasWidth * 4) / 5;
-                gameHeight = (gameWidth * 3) / 4;
+            ctx.drawImage(musicImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
+                targetRadius *
+                2);
+            if (!song.volume) {
+                ctx.drawImage(noImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
+                    targetRadius *
+                    2);
             }
-            gameXoffset = (canvasWidth - gameWidth) / 2;
-            gameYoffset = (canvasHeight - gameHeight) / 2;
-            laneHeight = gameHeight / 4;
-            targetRadius = gameWidth / 40;
-            obstacleRadius = (gameWidth * 7) / 120;
-            playerRadius = gameWidth / 24;
-            scoreXposition = (gameWidth * 7) / 10;
-            scoreYposition = (gameHeight * 7) / 100;
-            healthXposition = gameWidth / 60;
-            healthXdistance = (gameWidth * 7) / 100;
-            healthYposition = gameHeight / 45;
-            player.xPosition = gameWidth * 3 / 20;
-            soundXposition = canvasWidth * 4 / 5;
-            soundYposition = canvasHeight / 45;
+            ctx.drawImage(speakerImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
+                targetRadius * 2);
+            if (!audio) {
+                ctx.drawImage(noImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
+                    targetRadius * 2);
+            }
         }
-    }
 
-    function pregame() {
-        updateUIVariables();
-        ctx.font = `${gameWidth / 20}px courier`;
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.fillText("Press Spacebar to Play", gameXoffset + (gameWidth / 6), gameYoffset + (gameHeight * 4 / 9));
-        if (spacePressed) {
-            song.play();
-            clearInterval(interval);
-            interval = setInterval(tick, 30);
-            spacePressed = false;
+        function updateUIVariables() {
+            if (canvasWidth != window.innerWidth || canvasHeight != window.innerHeight) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                canvasWidth = canvas.clientWidth;
+                canvasHeight = canvas.clientHeight;
+                if (canvasHeight < canvasWidth * 3 / 4) {
+                    gameHeight = (canvasHeight * 4) / 5;
+                    gameWidth = (gameHeight * 4) / 3;
+                } else {
+                    gameWidth = (canvasWidth * 4) / 5;
+                    gameHeight = (gameWidth * 3) / 4;
+                }
+                gameXoffset = (canvasWidth - gameWidth) / 2;
+                gameYoffset = (canvasHeight - gameHeight) / 2;
+                laneHeight = gameHeight / 4;
+                targetRadius = gameWidth / 40;
+                obstacleRadius = (gameWidth * 7) / 120;
+                playerRadius = gameWidth / 24;
+                scoreXposition = (gameWidth * 7) / 10;
+                scoreYposition = (gameHeight * 7) / 100;
+                healthXposition = gameWidth / 60;
+                healthXdistance = (gameWidth * 7) / 100;
+                healthYposition = gameHeight / 45;
+                player.xPosition = gameWidth * 3 / 20;
+                soundXposition = canvasWidth * 4 / 5;
+                soundYposition = canvasHeight / 45;
+            }
         }
-    }
 
-    function checkForGameOver() {
-        if (player.health <= 0) {
-            clearInterval(interval);
+        function pregame() {
+            updateUIVariables();
+            ctx.font = `${gameWidth / 20}px courier`;
+            ctx.fillStyle = "rgb(255, 255, 255)";
+            ctx.fillText("Press Spacebar to Play", gameXoffset + (gameWidth / 6), gameYoffset + (gameHeight * 4 /
+                9));
+            if (spacePressed) {
+                song.play();
+                clearInterval(interval);
+                interval = setInterval(tick, 30);
+                spacePressed = false;
+            }
+        }
+
+        function checkForGameOver() {
+            if (player.health <= 0) {
+                clearInterval(interval);
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                interval = setInterval(gameOver, 50);
+            }
+        }
+
+        function gameOver() {
+            manageMusic();
+            updateUIVariables();
+
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            interval = setInterval(gameOver, 50);
+
+            ctx.font = `${gameWidth / 20}px courier`;
+            ctx.fillStyle = "rgb(255, 255, 255)";
+            ctx.fillText("Press Spacebar to Play Again", gameXoffset + (gameWidth / 15), gameYoffset + (gameHeight *
+                5 /
+                18));
+            ctx.fillText(`Score: ${player.score}`, gameXoffset + (gameWidth / 3), gameYoffset + (gameHeight * 5 /
+                9));
+
+            ctx.font = `${gameWidth / 24}px courier`;
+            ctx.fillText('m:', soundXposition, soundYposition);
+            ctx.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
+
+            ctx.drawImage(musicImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
+                targetRadius *
+                2);
+            if (!song.volume) {
+                ctx.drawImage(noImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
+                    targetRadius *
+                    2);
+            }
+            ctx.drawImage(speakerImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
+                targetRadius * 2);
+            if (!audio) {
+                ctx.drawImage(noImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
+                    targetRadius * 2);
+            }
+
+            if (spacePressed) {
+                targets = [];
+                obstacles = [];
+                player.score = 0;
+                player.health = 3;
+                clearInterval(interval);
+                interval = setInterval(tick, 30);
+                spacePressed = false;
+            }
+
         }
-    }
 
-    function gameOver() {
-        manageMusic();
-        updateUIVariables();
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        ctx.font = `${gameWidth / 20}px courier`;
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.fillText("Press Spacebar to Play Again", gameXoffset + (gameWidth / 15), gameYoffset + (gameHeight * 5 / 18));
-        ctx.fillText(`Score: ${player.score}`, gameXoffset + (gameWidth / 3), gameYoffset + (gameHeight * 5 / 9));
-
-        ctx.font = `${gameWidth / 24}px courier`;
-        ctx.fillText('m:', soundXposition, soundYposition);
-        ctx.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
-
-        ctx.drawImage(musicImage, soundXposition + targetRadius, soundYposition, targetRadius * 2, targetRadius * 2);
-        if (!song.volume) {
-            ctx.drawImage(noImage, soundXposition + targetRadius, soundYposition, targetRadius * 2, targetRadius * 2);
-        }
-        ctx.drawImage(speakerImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2, targetRadius * 2);
-        if (!audio) {
-            ctx.drawImage(noImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2, targetRadius * 2);
-        }
-
-        if (spacePressed) {
-            targets = [];
-            obstacles = [];
-            player.score = 0;
-            player.health = 3;
-            clearInterval(interval);
-            interval = setInterval(tick, 30);
-            spacePressed = false;
-        }
-        
-    }
-
-    interval = setInterval(pregame, 50);
-
-</script>
+        interval = setInterval(pregame, 50);
+    </script>
 
 </body>
+
 </html>
