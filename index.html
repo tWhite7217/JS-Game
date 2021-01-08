@@ -33,7 +33,8 @@
     <canvas id="health"></canvas>
     <canvas id="audio"></canvas>
     <canvas id="score"></canvas>
-    <canvas id="fore"></canvas>
+    <canvas id="circles"></canvas>
+    <canvas id="player"></canvas>
     <canvas id="border"></canvas>
 
     <div style="display: none">
@@ -55,7 +56,15 @@
       const speakerImage = document.getElementById("speaker symbol");
       const noImage = document.getElementById("no symbol");
 
-      var canvasIds = ["back", "health", "audio", "score", "fore", "border"];
+      var canvasIds = [
+        "back",
+        "health",
+        "audio",
+        "score",
+        "circles",
+        "player",
+        "border",
+      ];
       var canvases = {};
       var ctxs = {};
 
@@ -92,10 +101,12 @@
       var soundYposition;
 
       var score = 0;
+      var prevScore = 0;
       var health = 3;
       var prevHealth = 3;
       var playerXposition;
       var playerYposition = 2;
+      var prevY = 2;
 
       class Obstacle {
         constructor(yPos) {
@@ -201,9 +212,9 @@
           spacePressed = false;
           for (var i = 0; i < targets.length; i++) {
             if (
+              targets[i].yPosition === playerYposition &&
               Math.abs(targets[i].xPosition - playerXPosition) <=
-                targetRadius + targetRadius * targets[i].size &&
-              targets[i].yPosition === playerYposition
+                targetRadius + targetRadius * targets[i].size
             ) {
               if (targets[i].givesHealth) {
                 health += 1;
@@ -219,10 +230,9 @@
       function obstacleHit() {
         for (var i = 0; i < obstacles.length; i++) {
           if (
-            Math.abs(obstacles[i].xPosition - playerXPosition) <=
-              obstacleRadius &&
             obstacles[i].yPosition === playerYposition &&
-            !obstacles[i].hasDetected
+            !obstacles[i].hasDetected &&
+            Math.abs(obstacles[i].xPosition - playerXPosition) <= obstacleRadius
           ) {
             health--;
             obstacles[i].hasDetected = true;
@@ -458,18 +468,55 @@
               targetRadius * 2
             );
           }
+          prevAudio = audio;
+          prevVolume = song.volume;
         }
       }
 
       function drawScore(updated) {
-        ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["score"].fillStyle = "rgb(255, 255, 255)";
-        ctxs["score"].font = `${gameWidth / 24}px courier`;
-        ctxs["score"].fillText(
-          `Score: ${score}`,
-          gameXoffset + scoreXposition,
-          gameYoffset + scoreYposition
-        );
+        if (updated || score !== prevScore) {
+          ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
+          ctxs["score"].fillStyle = "rgb(255, 255, 255)";
+          ctxs["score"].font = `${gameWidth / 24}px courier`;
+          ctxs["score"].fillText(
+            `Score: ${score}`,
+            gameXoffset + scoreXposition,
+            gameYoffset + scoreYposition
+          );
+          prevScore = score;
+        }
+      }
+
+      function drawPlayer(updated) {
+        if (updated || playerYposition !== prevY) {
+          console.log("player Drawn");
+          ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
+          ctxs["player"].beginPath();
+          ctxs["player"].arc(
+            gameXoffset + playerXPosition,
+            gameYoffset + playerYposition * laneHeight,
+            playerRadius,
+            0,
+            2 * Math.PI
+          );
+          ctxs["player"].lineTo(
+            gameXoffset + playerXPosition - playerRadius,
+            gameYoffset + playerYposition * laneHeight
+          );
+          ctxs["player"].moveTo(
+            gameXoffset + playerXPosition,
+            gameYoffset + playerYposition * laneHeight - playerRadius
+          );
+          ctxs["player"].lineTo(
+            gameXoffset + playerXPosition,
+            gameYoffset + playerYposition * laneHeight + playerRadius
+          );
+          ctxs["player"].strokeStyle = "rgb(255, 255, 255)";
+          ctxs["player"].stroke();
+          ctxs["player"].closePath();
+
+          prevY = playerYposition;
+        }
       }
 
       function drawBorder(updated) {
@@ -495,17 +542,16 @@
         drawHealth(updated);
         drawAudio(updated);
         drawScore(updated);
+        drawPlayer(updated);
         drawBorder(updated);
 
-        // drawForeground();
+        ctxs["circles"].clearRect(0, 0, canvasWidth, canvasHeight);
 
-        ctxs["fore"].clearRect(0, 0, canvasWidth, canvasHeight);
-
-        ctxs["fore"].beginPath();
-        ctxs["fore"].fillStyle = "rgb(34, 139, 34)";
+        ctxs["circles"].beginPath();
+        ctxs["circles"].fillStyle = "rgb(34, 139, 34)";
         for (var i = 0; i < targets.length; i++) {
           if (targets[i].givesHealth) {
-            ctxs["fore"].drawImage(
+            ctxs["circles"].drawImage(
               heartImage,
               gameXoffset + targets[i].xPosition - targetRadius,
               gameYoffset + targets[i].yPosition * laneHeight - targetRadius,
@@ -513,11 +559,11 @@
               targetRadius * 2
             );
           } else {
-            ctxs["fore"].moveTo(
+            ctxs["circles"].moveTo(
               gameXoffset + targets[i].xPosition,
               gameYoffset + targets[i].yPosition * laneHeight
             );
-            ctxs["fore"].arc(
+            ctxs["circles"].arc(
               gameXoffset + targets[i].xPosition,
               gameYoffset + targets[i].yPosition * laneHeight,
               targets[i].size * targetRadius + targetRadius,
@@ -526,17 +572,17 @@
             );
           }
         }
-        ctxs["fore"].fill();
-        ctxs["fore"].closePath();
+        ctxs["circles"].fill();
+        ctxs["circles"].closePath();
 
-        ctxs["fore"].beginPath();
-        ctxs["fore"].fillStyle = "rgb(220, 20, 60)";
+        ctxs["circles"].beginPath();
+        ctxs["circles"].fillStyle = "rgb(220, 20, 60)";
         for (var i = 0; i < obstacles.length; i++) {
-          ctxs["fore"].moveTo(
+          ctxs["circles"].moveTo(
             gameXoffset + obstacles[i].xPosition,
             gameYoffset + obstacles[i].yPosition * laneHeight
           );
-          ctxs["fore"].arc(
+          ctxs["circles"].arc(
             gameXoffset + obstacles[i].xPosition,
             gameYoffset + obstacles[i].yPosition * laneHeight,
             obstacleRadius,
@@ -544,32 +590,8 @@
             2 * Math.PI
           );
         }
-        ctxs["fore"].fill();
-        ctxs["fore"].closePath();
-
-        ctxs["fore"].beginPath();
-        ctxs["fore"].arc(
-          gameXoffset + playerXPosition,
-          gameYoffset + playerYposition * laneHeight,
-          playerRadius,
-          0,
-          2 * Math.PI
-        );
-        ctxs["fore"].lineTo(
-          gameXoffset + playerXPosition - playerRadius,
-          gameYoffset + playerYposition * laneHeight
-        );
-        ctxs["fore"].moveTo(
-          gameXoffset + playerXPosition,
-          gameYoffset + playerYposition * laneHeight - playerRadius
-        );
-        ctxs["fore"].lineTo(
-          gameXoffset + playerXPosition,
-          gameYoffset + playerYposition * laneHeight + playerRadius
-        );
-        ctxs["fore"].strokeStyle = "rgb(255, 255, 255)";
-        ctxs["fore"].stroke();
-        ctxs["fore"].closePath();
+        ctxs["circles"].fill();
+        ctxs["circles"].closePath();
       }
 
       function updateUIVariables() {
@@ -625,6 +647,7 @@
           drawHealth(true);
           drawAudio(true);
           drawScore(true);
+          drawPlayer(true);
           drawBorder(true);
           song.play();
           clearInterval(interval);
@@ -648,7 +671,8 @@
         ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
         ctxs["health"].clearRect(0, 0, canvasWidth, canvasHeight);
         ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["fore"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["circles"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
 
         ctxs["back"].font = `${gameWidth / 20}px courier`;
         ctxs["back"].fillStyle = "rgb(255, 255, 255)";
@@ -680,6 +704,8 @@
           health = 3;
           drawBackground(true);
           drawHealth(true);
+          drawScore(true);
+          drawPlayer(true);
           clearInterval(interval);
           interval = setInterval(tick, 30);
           spacePressed = false;
