@@ -380,21 +380,21 @@
 
           ctxs["back"].beginPath();
           ctxs["back"].rect(
-            gameXoffset,
-            gameYoffset + laneHeight - 1,
-            gameWidth,
+            Math.round(gameXoffset),
+            Math.round(gameYoffset + laneHeight - 1),
+            Math.round(gameWidth),
             2
           );
           ctxs["back"].rect(
-            gameXoffset,
-            gameYoffset + laneHeight * 2 - 1,
-            gameWidth,
+            Math.round(gameXoffset),
+            Math.round(gameYoffset + laneHeight * 2 - 1),
+            Math.round(gameWidth),
             2
           );
           ctxs["back"].rect(
-            gameXoffset,
-            gameYoffset + laneHeight * 3 - 1,
-            gameWidth,
+            Math.round(gameXoffset),
+            Math.round(gameYoffset + laneHeight * 3 - 1),
+            Math.round(gameWidth),
             2
           );
           ctxs["back"].fillStyle = "rgb(221, 160, 221)";
@@ -409,10 +409,10 @@
           for (var i = 0; i < health; i++) {
             ctxs["health"].drawImage(
               heartImage,
-              gameXoffset + healthXposition + healthXdistance * i,
-              gameYoffset + healthYposition,
-              targetRadius * 2,
-              targetRadius * 2
+              Math.round(gameXoffset + healthXposition + healthXdistance * i),
+              Math.round(gameYoffset + healthYposition),
+              Math.round(targetRadius * 2),
+              Math.round(targetRadius * 2)
             );
           }
           prevHealth = health;
@@ -424,43 +424,43 @@
           ctxs["audio"].clearRect(0, 0, canvasWidth, canvasWidth);
           ctxs["audio"].fillStyle = "rgb(255, 255, 255)";
           ctxs["audio"].font = `${gameWidth / 24}px courier`;
-          ctxs["audio"].fillText("v0.1", 30, soundYposition);
+          ctxs["audio"].fillText("v0.2", 30, soundYposition);
           ctxs["audio"].fillText("m:", soundXposition, soundYposition);
           ctxs["audio"].fillText(
             "s:",
-            soundXposition + targetRadius * 4,
-            soundYposition
+            Math.round(soundXposition + targetRadius * 4),
+            Math.round(soundYposition)
           );
           ctxs["audio"].drawImage(
             musicImage,
-            soundXposition + targetRadius,
-            soundYposition,
-            targetRadius * 2,
-            targetRadius * 2
+            Math.round(soundXposition + targetRadius),
+            Math.round(soundYposition),
+            Math.round(targetRadius * 2),
+            Math.round(targetRadius * 2)
           );
           if (!song.volume) {
             ctxs["audio"].drawImage(
               noImage,
-              soundXposition + targetRadius,
-              soundYposition,
-              targetRadius * 2,
-              targetRadius * 2
+              Math.round(soundXposition + targetRadius),
+              Math.round(soundYposition),
+              Math.round(targetRadius * 2),
+              Math.round(targetRadius * 2)
             );
           }
           ctxs["audio"].drawImage(
             speakerImage,
-            soundXposition + targetRadius * 5,
-            soundYposition,
-            targetRadius * 2,
-            targetRadius * 2
+            Math.round(soundXposition + targetRadius * 5),
+            Math.round(soundYposition),
+            Math.round(targetRadius * 2),
+            Math.round(targetRadius * 2)
           );
           if (!audio) {
             ctxs["audio"].drawImage(
               noImage,
-              soundXposition + targetRadius * 5,
-              soundYposition,
-              targetRadius * 2,
-              targetRadius * 2
+              Math.round(soundXposition + targetRadius * 5),
+              Math.round(soundYposition),
+              Math.round(targetRadius * 2),
+              Math.round(targetRadius * 2)
             );
           }
           prevAudio = audio;
@@ -475,8 +475,8 @@
           ctxs["score"].font = `${gameWidth / 24}px courier`;
           ctxs["score"].fillText(
             `Score: ${score}`,
-            gameXoffset + scoreXposition,
-            gameYoffset + scoreYposition
+            Math.round(gameXoffset + scoreXposition),
+            Math.round(gameYoffset + scoreYposition)
           );
           prevScore = score;
         }
@@ -487,23 +487,27 @@
           ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
           ctxs["player"].beginPath();
           ctxs["player"].arc(
-            gameXoffset + playerXPosition,
-            gameYoffset + playerYposition * laneHeight,
-            playerRadius,
+            Math.round(gameXoffset + playerXPosition),
+            Math.round(gameYoffset + playerYposition * laneHeight),
+            Math.round(playerRadius),
             0,
             2 * Math.PI
           );
           ctxs["player"].lineTo(
-            gameXoffset + playerXPosition - playerRadius,
-            gameYoffset + playerYposition * laneHeight
+            Math.round(gameXoffset + playerXPosition - playerRadius),
+            Math.round(gameYoffset + playerYposition * laneHeight)
           );
           ctxs["player"].moveTo(
-            gameXoffset + playerXPosition,
-            gameYoffset + playerYposition * laneHeight - playerRadius
+            Math.round(gameXoffset + playerXPosition),
+            Math.round(
+              gameYoffset + playerYposition * laneHeight - playerRadius
+            )
           );
           ctxs["player"].lineTo(
-            gameXoffset + playerXPosition,
-            gameYoffset + playerYposition * laneHeight + playerRadius
+            Math.round(gameXoffset + playerXPosition),
+            Math.round(
+              gameYoffset + playerYposition * laneHeight + playerRadius
+            )
           );
           ctxs["player"].strokeStyle = "rgb(255, 255, 255)";
           ctxs["player"].stroke();
@@ -518,22 +522,27 @@
           ctxs["border"].beginPath();
           ctxs["border"].rect(
             0,
-            gameYoffset,
-            gameXoffset - outlineWidth / 2,
-            gameHeight
+            Math.round(gameYoffset),
+            Math.round(gameXoffset - outlineWidth / 2),
+            Math.round(gameHeight)
           );
           ctxs["border"].rect(
-            gameXoffset + gameWidth + outlineWidth / 2,
-            gameYoffset,
-            gameXoffset,
-            gameHeight
+            Math.round(gameXoffset + gameWidth + outlineWidth / 2),
+            Math.round(gameYoffset),
+            Math.round(gameXoffset),
+            Math.round(gameHeight)
           );
           ctxs["border"].fillStyle = "rgb(0, 0, 0)";
           ctxs["border"].fill();
           ctxs["border"].closePath();
 
           ctxs["border"].beginPath();
-          ctxs["border"].rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
+          ctxs["border"].rect(
+            Math.round(gameXoffset),
+            Math.round(gameYoffset),
+            Math.round(gameWidth),
+            Math.round(gameHeight)
+          );
           ctxs["border"].strokeStyle = "rgb(221, 160, 221)";
           ctxs["border"].lineWidth = outlineWidth;
           ctxs["border"].stroke();
@@ -559,20 +568,22 @@
           if (targets[i].givesHealth) {
             ctxs["circles"].drawImage(
               heartImage,
-              gameXoffset + targets[i].xPosition - targetRadius,
-              gameYoffset + targets[i].yPosition * laneHeight - targetRadius,
-              targetRadius * 2,
-              targetRadius * 2
+              Math.round(gameXoffset + targets[i].xPosition - targetRadius),
+              Math.round(
+                gameYoffset + targets[i].yPosition * laneHeight - targetRadius
+              ),
+              Math.round(targetRadius * 2),
+              Math.round(targetRadius * 2)
             );
           } else {
             ctxs["circles"].moveTo(
-              gameXoffset + targets[i].xPosition,
-              gameYoffset + targets[i].yPosition * laneHeight
+              Math.round(gameXoffset + targets[i].xPosition),
+              Math.round(gameYoffset + targets[i].yPosition * laneHeight)
             );
             ctxs["circles"].arc(
-              gameXoffset + targets[i].xPosition,
-              gameYoffset + targets[i].yPosition * laneHeight,
-              targets[i].size * targetRadius + targetRadius,
+              Math.round(gameXoffset + targets[i].xPosition),
+              Math.round(gameYoffset + targets[i].yPosition * laneHeight),
+              Math.round(targets[i].size * targetRadius + targetRadius),
               0,
               2 * Math.PI
             );
@@ -585,13 +596,13 @@
         ctxs["circles"].fillStyle = "rgb(220, 20, 60)";
         for (var i = 0; i < obstacles.length; i++) {
           ctxs["circles"].moveTo(
-            gameXoffset + obstacles[i].xPosition,
-            gameYoffset + obstacles[i].yPosition * laneHeight
+            Math.round(gameXoffset + obstacles[i].xPosition),
+            Math.round(gameYoffset + obstacles[i].yPosition * laneHeight)
           );
           ctxs["circles"].arc(
-            gameXoffset + obstacles[i].xPosition,
-            gameYoffset + obstacles[i].yPosition * laneHeight,
-            obstacleRadius,
+            Math.round(gameXoffset + obstacles[i].xPosition),
+            Math.round(gameYoffset + obstacles[i].yPosition * laneHeight),
+            Math.round(obstacleRadius),
             0,
             2 * Math.PI
           );
