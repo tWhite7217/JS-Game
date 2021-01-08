@@ -47,6 +47,7 @@
     <script>
       const minCount = 10;
       const countRange = 15;
+      const outlineWidth = 4;
       var count = 0;
 
       var interval;
@@ -359,7 +360,7 @@
         }
       }
 
-      /*  
+      /*
           A helper function of spawn
           Spawns two obstacles
           emptyOrTarget determines if line without obstacle gets targer or remains empty
@@ -399,21 +400,6 @@
           ctxs["back"].fillStyle = "rgb(221, 160, 221)";
           ctxs["back"].fill();
           ctxs["back"].closePath();
-
-          ctxs["back"].beginPath();
-          ctxs["back"].rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
-          ctxs["back"].strokeStyle = "rgb(221, 160, 221)";
-          ctxs["back"].lineWidth = 3;
-          ctxs["back"].stroke();
-          ctxs["back"].closePath();
-
-          ctxs["back"].fillStyle = "rgb(255, 255, 255)";
-          ctxs["back"].fillText("m:", soundXposition, soundYposition);
-          ctxs["back"].fillText(
-            "s:",
-            soundXposition + targetRadius * 4,
-            soundYposition
-          );
         }
       }
 
@@ -436,6 +422,15 @@
       function drawAudio(updated) {
         if (updated || audio !== prevAudio || song.volume !== prevVolume) {
           ctxs["audio"].clearRect(0, 0, canvasWidth, canvasWidth);
+          ctxs["audio"].fillStyle = "rgb(255, 255, 255)";
+          ctxs["audio"].font = `${gameWidth / 24}px courier`;
+          ctxs["audio"].fillText("v0.1", 30, soundYposition);
+          ctxs["audio"].fillText("m:", soundXposition, soundYposition);
+          ctxs["audio"].fillText(
+            "s:",
+            soundXposition + targetRadius * 4,
+            soundYposition
+          );
           ctxs["audio"].drawImage(
             musicImage,
             soundXposition + targetRadius,
@@ -489,7 +484,6 @@
 
       function drawPlayer(updated) {
         if (updated || playerYposition !== prevY) {
-          console.log("player Drawn");
           ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
           ctxs["player"].beginPath();
           ctxs["player"].arc(
@@ -522,15 +516,27 @@
       function drawBorder(updated) {
         if (updated) {
           ctxs["border"].beginPath();
-          ctxs["border"].rect(0, gameYoffset, gameXoffset, gameHeight);
           ctxs["border"].rect(
-            gameXoffset + gameWidth,
+            0,
+            gameYoffset,
+            gameXoffset - outlineWidth / 2,
+            gameHeight
+          );
+          ctxs["border"].rect(
+            gameXoffset + gameWidth + outlineWidth / 2,
             gameYoffset,
             gameXoffset,
             gameHeight
           );
           ctxs["border"].fillStyle = "rgb(0, 0, 0)";
           ctxs["border"].fill();
+          ctxs["border"].closePath();
+
+          ctxs["border"].beginPath();
+          ctxs["border"].rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
+          ctxs["border"].strokeStyle = "rgb(221, 160, 221)";
+          ctxs["border"].lineWidth = outlineWidth;
+          ctxs["border"].stroke();
           ctxs["border"].closePath();
         }
       }
@@ -659,7 +665,10 @@
       function checkForGameOver() {
         if (health <= 0) {
           clearInterval(interval);
-          ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
+          canvasIds.forEach((id) => {
+            ctxs[id].clearRect(0, 0, canvasWidth, canvasHeight);
+          });
+          drawAudio(true);
           interval = setInterval(gameOver, 50);
         }
       }
@@ -667,12 +676,6 @@
       function gameOver() {
         manageMusic();
         var updated = updateUIVariables();
-
-        ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["health"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["circles"].clearRect(0, 0, canvasWidth, canvasHeight);
-        ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
 
         ctxs["back"].font = `${gameWidth / 20}px courier`;
         ctxs["back"].fillStyle = "rgb(255, 255, 255)";
@@ -687,14 +690,6 @@
           gameYoffset + (gameHeight * 5) / 9
         );
 
-        ctxs["back"].font = `${gameWidth / 24}px courier`;
-        ctxs["back"].fillText("m:", soundXposition, soundYposition);
-        ctxs["back"].fillText(
-          "s:",
-          soundXposition + targetRadius * 4,
-          soundYposition
-        );
-
         drawAudio(updated);
 
         if (spacePressed) {
@@ -706,6 +701,7 @@
           drawHealth(true);
           drawScore(true);
           drawPlayer(true);
+          drawBorder(true);
           clearInterval(interval);
           interval = setInterval(tick, 30);
           spacePressed = false;
