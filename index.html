@@ -1,558 +1,692 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta name="viewport" charset="utf-8"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <head>
+    <meta
+      name="viewport"
+      charset="utf-8"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>CISC 181 Game - JavaScript Edition</title>
     <style>
-        * {
-            padding: 0;
-            margin: 0;
-        }
+      * {
+        padding: 0;
+        margin: 0;
+      }
 
-        canvas.back {
-            background: rgb(0, 0, 0);
-            display: block;
-            margin: 0 auto;
-        }
+      canvas.back {
+        background: rgb(0, 0, 0);
+        display: block;
+        margin: 0 auto;
+      }
 
-        canvas {
-            background: rgba(0, 0, 0, 0);
-            display: block;
-            position: absolute;
-            margin: 0 auto;
-        }
+      canvas {
+        background: rgba(0, 0, 0, 0);
+        display: block;
+        position: absolute;
+        margin: 0 auto;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <canvas id="back" class="back"></canvas>
     <canvas id="health"></canvas>
     <canvas id="audio"></canvas>
+    <canvas id="score"></canvas>
     <canvas id="fore"></canvas>
+    <canvas id="border"></canvas>
 
-    <div style="display:none;">
-        <img id="heart" src="heart.png">
-        <img id="music note" src="white music note.png">
-        <img id="speaker symbol" src="white speaker symbol.png">
-        <img id="no symbol" src="no symbol.png">
+    <div style="display: none">
+      <img id="heart" src="heart.png" />
+      <img id="music note" src="white music note.png" />
+      <img id="speaker symbol" src="white speaker symbol.png" />
+      <img id="no symbol" src="no symbol.png" />
     </div>
 
     <script>
-        const minCount = 10;
-        const countRange = 15;
-        var count = 0;
+      const minCount = 10;
+      const countRange = 15;
+      var count = 0;
 
-        var interval;
+      var interval;
 
-        const heartImage = document.getElementById('heart');
-        const musicImage = document.getElementById('music note');
-        const speakerImage = document.getElementById('speaker symbol');
-        const noImage = document.getElementById('no symbol');
+      const heartImage = document.getElementById("heart");
+      const musicImage = document.getElementById("music note");
+      const speakerImage = document.getElementById("speaker symbol");
+      const noImage = document.getElementById("no symbol");
 
-        var backCanvas = document.getElementById("back");
-        var healthCanvas = document.getElementById("health");
-        var audioCanvas = document.getElementById("audio");
-        var foreCanvas = document.getElementById("fore");
-        var ctxBack = backCanvas.getContext("2d");
-        var ctxHealth = healthCanvas.getContext("2d");
-        var ctxAudio = audioCanvas.getContext("2d");
-        var ctxFore = foreCanvas.getContext("2d");
-        backCanvas.width = window.innerWidth;
-        backCanvas.height = window.innerHeight;
-        audioCanvas.width = window.innerWidth;
-        audioCanvas.height = window.innerHeight;
-        healthCanvas.width = window.innerWidth;
-        healthCanvas.height = window.innerHeight;
-        foreCanvas.width = window.innerWidth;
-        foreCanvas.height = window.innerHeight;
+      var canvasIds = ["back", "health", "audio", "score", "fore", "border"];
+      var canvases = {};
+      var ctxs = {};
 
-        var upPressed = false;
-        var upLock = false;
-        var downPressed = false;
-        var downLock = false;
-        var spacePressed = false;
-        var spaceLock = false;
+      canvasIds.forEach((id) => {
+        canvases[id] = document.getElementById(id);
+        canvases[id].width = window.innerWidth;
+        canvases[id].height = window.innerHeight;
+        ctxs[id] = canvases[id].getContext("2d");
+      });
 
-        var canvasWidth;
-        var canvasHeight;
-        var gameWidth;
-        var gameHeight;
-        var gameXoffset;
-        var gameYoffset;
-        var laneHeight;
-        var targetRadius;
-        var obstacleRadius;
-        var playerRadius;
-        var scoreXposition;
-        var scoreYposition;
-        var healthXposition;
-        var healthXdistance;
-        var healthYposition;
-        var soundXposition;
-        var soundYposition;
+      var upPressed = false;
+      var upLock = false;
+      var downPressed = false;
+      var downLock = false;
+      var spacePressed = false;
+      var spaceLock = false;
 
-        var score = 0;
-        var health = 3;
-        var prevHealth = 3;
-        var playerXposition;
-        var playerYposition = 2;
+      var canvasWidth;
+      var canvasHeight;
+      var gameWidth;
+      var gameHeight;
+      var gameXoffset;
+      var gameYoffset;
+      var laneHeight;
+      var targetRadius;
+      var obstacleRadius;
+      var playerRadius;
+      var scoreXposition;
+      var scoreYposition;
+      var healthXposition;
+      var healthXdistance;
+      var healthYposition;
+      var soundXposition;
+      var soundYposition;
 
-        class Obstacle {
-            constructor(yPos) {
-                this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
-                this.yPosition = yPos;
-                this.hasDetected = false;
-            }
+      var score = 0;
+      var health = 3;
+      var prevHealth = 3;
+      var playerXposition;
+      var playerYposition = 2;
+
+      class Obstacle {
+        constructor(yPos) {
+          this.xPosition = gameWidth + obstacleRadius * 2 - 1;
+          this.yPosition = yPos;
+          this.hasDetected = false;
         }
+      }
 
-        class Target {
-            constructor(size, yPos, givesHealth) {
-                this.size = size;
-                this.givesHealth = givesHealth;
+      class Target {
+        constructor(size, yPos, givesHealth) {
+          this.size = size;
+          this.givesHealth = givesHealth;
 
-                if (givesHealth) {
-                    this.pointValue = 0;
-                } else {
-                    this.pointValue = 3 - size;
-                }
-                this.xPosition = gameWidth + (obstacleRadius * 2) - 1;
+          if (givesHealth) {
+            this.pointValue = 0;
+          } else {
+            this.pointValue = 3 - size;
+          }
+          this.xPosition = gameWidth + obstacleRadius * 2 - 1;
 
-                this.yPosition = yPos;
-            }
+          this.yPosition = yPos;
         }
+      }
 
-        var targets = [];
-        var obstacles = [];
+      var targets = [];
+      var obstacles = [];
 
-        var audio = 0;
-        var prevAudio;
-        var prevVolume;
-        var oldVolume;
-        var song = new Audio('silence.mp3');
-        var laserSound = new Audio('laser-shot-quiet.mp3');
-        var damageTakenSound = new Audio('damage.mp3');
+      var audio = 0;
+      var prevAudio;
+      var prevVolume;
+      var oldVolume;
+      var song = new Audio("silence.mp3");
+      var laserSound = new Audio("laser-shot-quiet.mp3");
+      var damageTakenSound = new Audio("damage.mp3");
 
-        document.addEventListener("keydown", keyDownHandler, false);
-        document.addEventListener("keyup", keyUpHandler, false);
-        document.addEventListener("touchstart", touchHandler);
+      document.addEventListener("keydown", keyDownHandler, false);
+      document.addEventListener("keyup", keyUpHandler, false);
+      document.addEventListener("touchstart", touchHandler);
 
-        function keyDownHandler(e) {
-            if ((e.key === "Up" || e.key === "ArrowUp") && !upLock) {
-                upPressed = true;
-                upLock = true;
-            } else if (e.key === "Down" || e.key === "ArrowDown" && !downLock) {
-                downPressed = true;
-                downLock = true;
-            } else if ((e.key === " " || e.key === "Spacebar") && !spaceLock) {
-                spacePressed = true;
-                spaceLock = true;
-            } else if (e.key === "s") {
-                audio = !audio;
-            } else if (e.key === "m") {
-                song.volume = !song.volume;
-            }
+      function keyDownHandler(e) {
+        if ((e.key === "Up" || e.key === "ArrowUp") && !upLock) {
+          upPressed = true;
+          upLock = true;
+        } else if (e.key === "Down" || (e.key === "ArrowDown" && !downLock)) {
+          downPressed = true;
+          downLock = true;
+        } else if ((e.key === " " || e.key === "Spacebar") && !spaceLock) {
+          spacePressed = true;
+          spaceLock = true;
+        } else if (e.key === "s") {
+          audio = !audio;
+        } else if (e.key === "m") {
+          song.volume = !song.volume;
         }
+      }
 
-        function keyUpHandler(e) {
-            if (e.key === "Up" || e.key === "ArrowUp") {
-                upLock = false;
-            } else if (e.key === "Down" || e.key === "ArrowDown") {
-                downLock = false;
-            } else if (e.key === " " || e.key === "Spacebar") {
-                spaceLock = false;
-            }
+      function keyUpHandler(e) {
+        if (e.key === "Up" || e.key === "ArrowUp") {
+          upLock = false;
+        } else if (e.key === "Down" || e.key === "ArrowDown") {
+          downLock = false;
+        } else if (e.key === " " || e.key === "Spacebar") {
+          spaceLock = false;
         }
+      }
 
-        function touchHandler(e) {
-            for (let i = 0; i < e.touches.length; i++) {
-                if (e.touches[i].clientX <= canvasWidth / 2) { // Left half pressed
-                    if (e.touches[i].clientY <= canvasHeight / 2) { // Top left pressed
-                        upPressed = true;
-                    } else { // Bottom left pressed
-                        downPressed = true;
-                    }
-                } else if (e.touches[i].clientY > soundYposition + 3 *
-                    targetRadius) { // Right half below sound options pressed
-                    spacePressed = true;
-                } else if (e.touches[i].clientX >= soundXposition && e.touches[i].clientX < soundXposition +
-                    targetRadius * 3.25) { // Music button pressed
-                    song.volume = !song.volume;
-                } else if (e.touches[i].clientX > soundXposition + targetRadius * 3.5 && e.touches[i].clientX <=
-                    soundXposition + targetRadius * 8) { // Sound effect button pressed
-                    audio = !audio;
-                }
-            }
-        }
-
-        function targetHit() {
-            if (spacePressed) {
-                if (audio) {
-                    laserSound.play();
-                }
-                spacePressed = false;
-                for (var i = 0; i < targets.length; i++) {
-                    if (Math.abs(targets[i].xPosition - playerXPosition) <= (targetRadius + (targetRadius * (
-                            targets[i]
-                            .size))) && targets[i].yPosition === playerYposition) {
-                        if (targets[i].givesHealth) {
-                            health += 1;
-                        }
-                        score += targets[i].pointValue;
-                        targets.splice(i, 1);
-                        i--;
-                    }
-                }
-            }
-        }
-
-        function obstacleHit() {
-            for (var i = 0; i < obstacles.length; i++) {
-                if ((Math.abs(obstacles[i].xPosition - playerXPosition) <= obstacleRadius) && obstacles[i]
-                    .yPosition === playerYposition && !(obstacles[i].hasDetected)) {
-                    health--;
-                    obstacles[i].hasDetected = true;
-                    if (audio) {
-                        damageTakenSound.play();
-                    }
-                }
-            }
-        }
-
-        function move() {
-            if (downPressed) {
-                if (playerYposition != 3) {
-                    playerYposition += 1;
-                }
-                downPressed = false;
-            }
-            if (upPressed) {
-                if (playerYposition != 1) {
-                    playerYposition -= 1;
-                }
-                upPressed = false;
-            }
-        }
-
-        function moveTargetsAndObstacles() {
-            for (var i = 0; i < targets.length; i++) {
-                targets[i].xPosition -= gameWidth / 60;
-                if (targets[i].xPosition < 0 - (targetRadius + (targets[i].size * targetRadius))) {
-                    targets.splice(i, 1);
-                    i--;
-                }
-            }
-            for (var i = 0; i < obstacles.length; i++) {
-                obstacles[i].xPosition -= gameWidth / 60;
-                if (obstacles[i].xPosition < 0 - obstacleRadius) {
-                    obstacles.splice(i, 1);
-                    i--;
-                }
-            }
-        }
-
-        function manageMusic() {
-            if (song.paused) {
-                oldVolume = song.volume;
-                switch (Math.floor(Math.random() * 4)) {
-                    case 0:
-                        song = new Audio('bensound-scifi.mp3');
-                        break;
-                    case 1:
-                        song = new Audio('bensound-newdawn.mp3');
-                        break;
-                    case 2:
-                        song = new Audio('bensound-evolution.mp3');
-                        break;
-                    case 3:
-                        song = new Audio('bensound-deepblue.mp3');
-                        break;
-                }
-                song.play();
-                song.volume = oldVolume;
-            }
-        }
-
-        function tick() {
-            if (count >= minCount + Math.floor(countRange / (1 + (score / 20)))) {
-                spawn(Math.floor(Math.random() * 11));
-                count = 0;
+      function touchHandler(e) {
+        for (let i = 0; i < e.touches.length; i++) {
+          if (e.touches[i].clientX <= canvasWidth / 2) {
+            // Left half pressed
+            if (e.touches[i].clientY <= canvasHeight / 2) {
+              // Top left pressed
+              upPressed = true;
             } else {
-                count++
+              // Bottom left pressed
+              downPressed = true;
             }
-            targetHit();
-            obstacleHit();
-            move();
-            moveTargetsAndObstacles();
-            updateUI();
-            checkForGameOver();
-            manageMusic();
+          } else if (e.touches[i].clientY > soundYposition + 3 * targetRadius) {
+            // Right half below sound options pressed
+            spacePressed = true;
+          } else if (
+            e.touches[i].clientX >= soundXposition &&
+            e.touches[i].clientX < soundXposition + targetRadius * 3.25
+          ) {
+            // Music button pressed
+            song.volume = !song.volume;
+          } else if (
+            e.touches[i].clientX > soundXposition + targetRadius * 3.5 &&
+            e.touches[i].clientX <= soundXposition + targetRadius * 8
+          ) {
+            // Sound effect button pressed
+            audio = !audio;
+          }
+        }
+      }
+
+      function targetHit() {
+        if (spacePressed) {
+          if (audio) {
+            laserSound.play();
+          }
+          spacePressed = false;
+          for (var i = 0; i < targets.length; i++) {
+            if (
+              Math.abs(targets[i].xPosition - playerXPosition) <=
+                targetRadius + targetRadius * targets[i].size &&
+              targets[i].yPosition === playerYposition
+            ) {
+              if (targets[i].givesHealth) {
+                health += 1;
+              }
+              score += targets[i].pointValue;
+              targets.splice(i, 1);
+              i--;
+            }
+          }
+        }
+      }
+
+      function obstacleHit() {
+        for (var i = 0; i < obstacles.length; i++) {
+          if (
+            Math.abs(obstacles[i].xPosition - playerXPosition) <=
+              obstacleRadius &&
+            obstacles[i].yPosition === playerYposition &&
+            !obstacles[i].hasDetected
+          ) {
+            health--;
+            obstacles[i].hasDetected = true;
+            if (audio) {
+              damageTakenSound.play();
+            }
+          }
+        }
+      }
+
+      function move() {
+        if (downPressed) {
+          if (playerYposition != 3) {
+            playerYposition += 1;
+          }
+          downPressed = false;
+        }
+        if (upPressed) {
+          if (playerYposition != 1) {
+            playerYposition -= 1;
+          }
+          upPressed = false;
+        }
+      }
+
+      function moveTargetsAndObstacles() {
+        for (var i = 0; i < targets.length; i++) {
+          targets[i].xPosition -= gameWidth / 60;
+          if (
+            targets[i].xPosition <
+            0 - (targetRadius + targets[i].size * targetRadius)
+          ) {
+            targets.splice(i, 1);
+            i--;
+          }
+        }
+        for (var i = 0; i < obstacles.length; i++) {
+          obstacles[i].xPosition -= gameWidth / 60;
+          if (obstacles[i].xPosition < 0 - obstacleRadius) {
+            obstacles.splice(i, 1);
+            i--;
+          }
+        }
+      }
+
+      function manageMusic() {
+        if (song.paused) {
+          oldVolume = song.volume;
+          switch (Math.floor(Math.random() * 4)) {
+            case 0:
+              song = new Audio("bensound-scifi.mp3");
+              break;
+            case 1:
+              song = new Audio("bensound-newdawn.mp3");
+              break;
+            case 2:
+              song = new Audio("bensound-evolution.mp3");
+              break;
+            case 3:
+              song = new Audio("bensound-deepblue.mp3");
+              break;
+          }
+          song.play();
+          song.volume = oldVolume;
+        }
+      }
+
+      function tick() {
+        if (count >= minCount + Math.floor(countRange / (1 + score / 20))) {
+          spawn(Math.floor(Math.random() * 11));
+          count = 0;
+        } else {
+          count++;
+        }
+        targetHit();
+        obstacleHit();
+        move();
+        moveTargetsAndObstacles();
+        updateUI();
+        checkForGameOver();
+        manageMusic();
+      }
+
+      function spawn(type) {
+        var healthSpawn = Math.floor(Math.random() * 100);
+        if (healthSpawn === 0) {
+          targets.push(new Target(0, Math.floor(type / 4) + 1, true));
+        } else {
+          if (type < 3) {
+            spawnObstacleOrTarget(Math.floor(Math.random() * 2), type + 1);
+          } else if (type < 6) {
+            spawnObstacleAndTarget(Math.floor(Math.random() * 3) + 1);
+          } else {
+            spawnTwoObstacles();
+          }
+        }
+      }
+
+      function spawnObstacleOrTarget(obstacleOrTarget, yPos) {
+        if (obstacleOrTarget) {
+          targets.push(new Target(Math.floor(Math.random() * 3), yPos, false));
+        } else {
+          obstacles.push(new Obstacle(yPos));
+        }
+      }
+
+      // A helper function of spawn
+      function spawnObstacleAndTarget(obstacleYPos) {
+        obstacles.push(new Obstacle(obstacleYPos));
+        if (Math.floor(Math.random() * 2)) {
+          targets.push(
+            new Target(
+              Math.floor(Math.random() * 3),
+              2 - Math.floor(obstacleYPos / 2)
+            )
+          );
+        } else {
+          targets.push(
+            new Target(
+              Math.floor(Math.random() * 3),
+              3 - Math.floor(obstacleYPos / 3)
+            )
+          );
+        }
+      }
+
+      /*  
+          A helper function of spawn
+          Spawns two obstacles
+          emptyOrTarget determines if line without obstacle gets targer or remains empty
+          */
+      function spawnTwoObstacles() {
+        var obstacleLines = Math.floor(Math.random() * 3);
+        obstacles.push(new Obstacle(1 + Math.floor(obstacleLines / 2)));
+        obstacles.push(new Obstacle(2 + Math.ceil(obstacleLines / 2)));
+        /*if (emptyOrTarget) {
+                    targets.push(new Target(Math.floor(Math.random() * 3), 3 - obstacleLines, false));
+                }*/
+      }
+
+      function drawBackground(updated) {
+        if (updated) {
+          ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
+
+          ctxs["back"].beginPath();
+          ctxs["back"].rect(
+            gameXoffset,
+            gameYoffset + laneHeight - 1,
+            gameWidth,
+            2
+          );
+          ctxs["back"].rect(
+            gameXoffset,
+            gameYoffset + laneHeight * 2 - 1,
+            gameWidth,
+            2
+          );
+          ctxs["back"].rect(
+            gameXoffset,
+            gameYoffset + laneHeight * 3 - 1,
+            gameWidth,
+            2
+          );
+          ctxs["back"].fillStyle = "rgb(221, 160, 221)";
+          ctxs["back"].fill();
+          ctxs["back"].closePath();
+
+          ctxs["back"].beginPath();
+          ctxs["back"].rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
+          ctxs["back"].strokeStyle = "rgb(221, 160, 221)";
+          ctxs["back"].lineWidth = 3;
+          ctxs["back"].stroke();
+          ctxs["back"].closePath();
+
+          ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+          ctxs["back"].fillText("m:", soundXposition, soundYposition);
+          ctxs["back"].fillText(
+            "s:",
+            soundXposition + targetRadius * 4,
+            soundYposition
+          );
+        }
+      }
+
+      function drawHealth(updated) {
+        if (health !== prevHealth || updated) {
+          ctxs["health"].clearRect(0, 0, canvasWidth, canvasHeight);
+          for (var i = 0; i < health; i++) {
+            ctxs["health"].drawImage(
+              heartImage,
+              gameXoffset + healthXposition + healthXdistance * i,
+              gameYoffset + healthYposition,
+              targetRadius * 2,
+              targetRadius * 2
+            );
+          }
+          prevHealth = health;
+        }
+      }
+
+      function drawAudio(updated) {
+        if (updated || audio !== prevAudio || song.volume !== prevVolume) {
+          ctxs["audio"].clearRect(0, 0, canvasWidth, canvasWidth);
+          ctxs["audio"].drawImage(
+            musicImage,
+            soundXposition + targetRadius,
+            soundYposition,
+            targetRadius * 2,
+            targetRadius * 2
+          );
+          if (!song.volume) {
+            ctxs["audio"].drawImage(
+              noImage,
+              soundXposition + targetRadius,
+              soundYposition,
+              targetRadius * 2,
+              targetRadius * 2
+            );
+          }
+          ctxs["audio"].drawImage(
+            speakerImage,
+            soundXposition + targetRadius * 5,
+            soundYposition,
+            targetRadius * 2,
+            targetRadius * 2
+          );
+          if (!audio) {
+            ctxs["audio"].drawImage(
+              noImage,
+              soundXposition + targetRadius * 5,
+              soundYposition,
+              targetRadius * 2,
+              targetRadius * 2
+            );
+          }
+        }
+      }
+
+      function drawScore(updated) {
+        ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["score"].fillStyle = "rgb(255, 255, 255)";
+        ctxs["score"].font = `${gameWidth / 24}px courier`;
+        ctxs["score"].fillText(
+          `Score: ${score}`,
+          gameXoffset + scoreXposition,
+          gameYoffset + scoreYposition
+        );
+      }
+
+      function drawBorder(updated) {
+        if (updated) {
+          ctxs["border"].beginPath();
+          ctxs["border"].rect(0, gameYoffset, gameXoffset, gameHeight);
+          ctxs["border"].rect(
+            gameXoffset + gameWidth,
+            gameYoffset,
+            gameXoffset,
+            gameHeight
+          );
+          ctxs["border"].fillStyle = "rgb(0, 0, 0)";
+          ctxs["border"].fill();
+          ctxs["border"].closePath();
+        }
+      }
+
+      function updateUI() {
+        var updated = updateUIVariables();
+
+        drawBackground(updated);
+        drawHealth(updated);
+        drawAudio(updated);
+        drawScore(updated);
+        drawBorder(updated);
+
+        // drawForeground();
+
+        ctxs["fore"].clearRect(0, 0, canvasWidth, canvasHeight);
+
+        ctxs["fore"].beginPath();
+        ctxs["fore"].fillStyle = "rgb(34, 139, 34)";
+        for (var i = 0; i < targets.length; i++) {
+          if (targets[i].givesHealth) {
+            ctxs["fore"].drawImage(
+              heartImage,
+              gameXoffset + targets[i].xPosition - targetRadius,
+              gameYoffset + targets[i].yPosition * laneHeight - targetRadius,
+              targetRadius * 2,
+              targetRadius * 2
+            );
+          } else {
+            ctxs["fore"].moveTo(
+              gameXoffset + targets[i].xPosition,
+              gameYoffset + targets[i].yPosition * laneHeight
+            );
+            ctxs["fore"].arc(
+              gameXoffset + targets[i].xPosition,
+              gameYoffset + targets[i].yPosition * laneHeight,
+              targets[i].size * targetRadius + targetRadius,
+              0,
+              2 * Math.PI
+            );
+          }
+        }
+        ctxs["fore"].fill();
+        ctxs["fore"].closePath();
+
+        ctxs["fore"].beginPath();
+        ctxs["fore"].fillStyle = "rgb(220, 20, 60)";
+        for (var i = 0; i < obstacles.length; i++) {
+          ctxs["fore"].moveTo(
+            gameXoffset + obstacles[i].xPosition,
+            gameYoffset + obstacles[i].yPosition * laneHeight
+          );
+          ctxs["fore"].arc(
+            gameXoffset + obstacles[i].xPosition,
+            gameYoffset + obstacles[i].yPosition * laneHeight,
+            obstacleRadius,
+            0,
+            2 * Math.PI
+          );
+        }
+        ctxs["fore"].fill();
+        ctxs["fore"].closePath();
+
+        ctxs["fore"].beginPath();
+        ctxs["fore"].arc(
+          gameXoffset + playerXPosition,
+          gameYoffset + playerYposition * laneHeight,
+          playerRadius,
+          0,
+          2 * Math.PI
+        );
+        ctxs["fore"].lineTo(
+          gameXoffset + playerXPosition - playerRadius,
+          gameYoffset + playerYposition * laneHeight
+        );
+        ctxs["fore"].moveTo(
+          gameXoffset + playerXPosition,
+          gameYoffset + playerYposition * laneHeight - playerRadius
+        );
+        ctxs["fore"].lineTo(
+          gameXoffset + playerXPosition,
+          gameYoffset + playerYposition * laneHeight + playerRadius
+        );
+        ctxs["fore"].strokeStyle = "rgb(255, 255, 255)";
+        ctxs["fore"].stroke();
+        ctxs["fore"].closePath();
+      }
+
+      function updateUIVariables() {
+        if (
+          canvasWidth != window.innerWidth ||
+          canvasHeight != window.innerHeight
+        ) {
+          canvasIds.forEach((id) => {
+            canvases[id].width = window.innerWidth;
+            canvases[id].height = window.innerHeight;
+          });
+          canvasWidth = canvases["back"].clientWidth;
+          canvasHeight = canvases["back"].clientHeight;
+          if (canvasHeight < (canvasWidth * 3) / 4) {
+            gameHeight = (canvasHeight * 4) / 5;
+            gameWidth = (gameHeight * 4) / 3;
+          } else {
+            gameWidth = (canvasWidth * 4) / 5;
+            gameHeight = (gameWidth * 3) / 4;
+          }
+          gameXoffset = (canvasWidth - gameWidth) / 2;
+          gameYoffset = (canvasHeight - gameHeight) / 2;
+          laneHeight = gameHeight / 4;
+          targetRadius = gameWidth / 40;
+          obstacleRadius = (gameWidth * 7) / 120;
+          playerRadius = gameWidth / 24;
+          scoreXposition = (gameWidth * 7) / 10;
+          scoreYposition = (gameHeight * 7) / 100;
+          healthXposition = gameWidth / 60;
+          healthXdistance = (gameWidth * 7) / 100;
+          healthYposition = gameHeight / 45;
+          playerXPosition = (gameWidth * 3) / 20;
+          soundXposition = (canvasWidth * 4) / 5;
+          soundYposition = canvasHeight / 45;
+
+          return true;
         }
 
-        function spawn(type) {
-            var healthSpawn = Math.floor(Math.random() * 100);
-            if (healthSpawn === 0) {
-                targets.push(new Target(0, Math.floor(type / 4) + 1, true));
-            } else {
-                if (type < 3) {
-                    spawnObstacleOrTarget(Math.floor(Math.random() * 2), type + 1);
-                } else if (type < 6) {
-                    spawnObstacleAndTarget(Math.floor(Math.random() * 3) + 1);
-                } else {
-                    spawnTwoObstacles();
-                }
-            }
+        return false;
+      }
 
+      function pregame() {
+        updateUIVariables();
+        ctxs["back"].font = `${gameWidth / 20}px courier`;
+        ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+        ctxs["back"].fillText(
+          "Press Spacebar to Play",
+          gameXoffset + gameWidth / 6,
+          gameYoffset + (gameHeight * 4) / 9
+        );
+        if (spacePressed) {
+          drawBackground(true);
+          drawHealth(true);
+          drawAudio(true);
+          drawScore(true);
+          drawBorder(true);
+          song.play();
+          clearInterval(interval);
+          interval = setInterval(tick, 30);
+          spacePressed = false;
         }
+      }
 
-        function spawnObstacleOrTarget(obstacleOrTarget, yPos) {
-            if (obstacleOrTarget) {
-                targets.push(new Target(Math.floor(Math.random() * 3), yPos, false));
-            } else {
-                obstacles.push(new Obstacle(yPos));
-            }
+      function checkForGameOver() {
+        if (health <= 0) {
+          clearInterval(interval);
+          ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
+          interval = setInterval(gameOver, 50);
         }
+      }
 
-        // A helper function of spawn
-        function spawnObstacleAndTarget(obstacleYPos) {
-            obstacles.push(new Obstacle(obstacleYPos));
-            if (Math.floor(Math.random() * 2)) {
-                targets.push(new Target(Math.floor(Math.random() * 3), 2 - Math.floor(obstacleYPos / 2)));
-            } else {
-                targets.push(new Target(Math.floor(Math.random() * 3), 3 - Math.floor(obstacleYPos / 3)));
-            }
+      function gameOver() {
+        manageMusic();
+        var updated = updateUIVariables();
+
+        ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["health"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
+        ctxs["fore"].clearRect(0, 0, canvasWidth, canvasHeight);
+
+        ctxs["back"].font = `${gameWidth / 20}px courier`;
+        ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+        ctxs["back"].fillText(
+          "Press Spacebar to Play Again",
+          gameXoffset + gameWidth / 15,
+          gameYoffset + (gameHeight * 5) / 18
+        );
+        ctxs["back"].fillText(
+          `Score: ${score}`,
+          gameXoffset + gameWidth / 3,
+          gameYoffset + (gameHeight * 5) / 9
+        );
+
+        ctxs["back"].font = `${gameWidth / 24}px courier`;
+        ctxs["back"].fillText("m:", soundXposition, soundYposition);
+        ctxs["back"].fillText(
+          "s:",
+          soundXposition + targetRadius * 4,
+          soundYposition
+        );
+
+        drawAudio(updated);
+
+        if (spacePressed) {
+          targets = [];
+          obstacles = [];
+          score = 0;
+          health = 3;
+          drawBackground(true);
+          drawHealth(true);
+          clearInterval(interval);
+          interval = setInterval(tick, 30);
+          spacePressed = false;
         }
+      }
 
-        /*  
-        A helper function of spawn
-        Spawns two obstacles
-        emptyOrTarget determines if line without obstacle gets targer or remains empty
-        */
-        function spawnTwoObstacles() {
-            var obstacleLines = Math.floor(Math.random() * 3);
-            obstacles.push(new Obstacle(1 + Math.floor(obstacleLines / 2)));
-            obstacles.push(new Obstacle(2 + Math.ceil(obstacleLines / 2)));
-            /*if (emptyOrTarget) {
-                targets.push(new Target(Math.floor(Math.random() * 3), 3 - obstacleLines, false));
-            }*/
-        }
-
-        function drawBackground(updated) {
-            if (updated) {
-                ctxBack.clearRect(0, 0, canvasWidth, canvasHeight);
-
-                ctxBack.beginPath();
-                ctxBack.rect(gameXoffset, gameYoffset + laneHeight - 1, gameWidth, 2);
-                ctxBack.rect(gameXoffset, gameYoffset + (laneHeight * 2) - 1, gameWidth, 2);
-                ctxBack.rect(gameXoffset, gameYoffset + (laneHeight * 3) - 1, gameWidth, 2);
-                ctxBack.fillStyle = "rgb(221, 160, 221)";
-                ctxBack.fill();
-                ctxBack.closePath();
-
-                ctxBack.beginPath();
-                ctxBack.rect(gameXoffset, gameYoffset, gameWidth, gameHeight);
-                ctxBack.strokeStyle = "rgb(221, 160, 221)";
-                ctxBack.lineWidth = 3;
-                ctxBack.stroke();
-                ctxBack.closePath();
-
-                ctxBack.fillStyle = "rgb(255, 255, 255)";
-                ctxBack.font = `${gameWidth / 24}px courier`;
-                ctxBack.fillText(`Score: ${score}`, gameXoffset + scoreXposition, gameYoffset + scoreYposition);
-                ctxBack.fillText('m:', soundXposition, soundYposition);
-                ctxBack.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
-            }
-        }
-
-        function drawHealth(updated) {
-            if (health !== prevHealth || updated) {
-                ctxHealth.clearRect(0, 0, canvasWidth, canvasHeight);
-                for (var i = 0; i < health; i++) {
-                    ctxHealth.drawImage(heartImage, gameXoffset + healthXposition + (healthXdistance * i), gameYoffset +
-                        healthYposition, targetRadius * 2, targetRadius * 2);
-                }
-                prevHealth = health;
-            }
-        }
-
-        function drawAudio(updated) {
-            if (updated || audio !== prevAudio || song.volume !== prevVolume) {
-                ctxAudio.clearRect(0, 0, canvasWidth, canvasWidth);
-                ctxAudio.drawImage(musicImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
-                    targetRadius * 2);
-                if (!song.volume) {
-                    ctxAudio.drawImage(noImage, soundXposition + targetRadius, soundYposition, targetRadius * 2,
-                        targetRadius * 2);
-                }
-                ctxAudio.drawImage(speakerImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
-                    targetRadius * 2);
-                if (!audio) {
-                    ctxAudio.drawImage(noImage, soundXposition + targetRadius * 5, soundYposition, targetRadius * 2,
-                        targetRadius * 2);
-                }
-            }
-        }
-
-        function updateUI() {
-            var updated = updateUIVariables();
-
-            drawBackground(updated);
-            drawHealth(updated);
-            drawAudio(updated);
-
-            // drawForeground();
-
-            ctxFore.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            for (var i = 0; i < targets.length; i++) {
-                if (targets[i].givesHealth) {
-                    ctxFore.drawImage(heartImage, gameXoffset + targets[i].xPosition - targetRadius, gameYoffset + (
-                        targets[
-                            i].yPosition * laneHeight) - targetRadius, targetRadius * 2, targetRadius * 2);
-                } else {
-                    ctxFore.beginPath();
-                    ctxFore.arc(gameXoffset + targets[i].xPosition, gameYoffset + targets[i].yPosition * laneHeight, (
-                        targets[i].size * targetRadius) + targetRadius, 0, 2 * Math.PI);
-                    ctxFore.fillStyle = "rgb(34, 139, 34)";
-                    ctxFore.fill();
-                    ctxFore.closePath();
-                }
-            }
-
-            for (var i = 0; i < obstacles.length; i++) {
-                ctxFore.beginPath();
-                ctxFore.arc(gameXoffset + obstacles[i].xPosition, gameYoffset + obstacles[i].yPosition * laneHeight,
-                    obstacleRadius, 0, 2 * Math.PI);
-                ctxFore.fillStyle = "rgb(220, 20, 60)";
-                ctxFore.fill();
-                ctxFore.closePath();
-            }
-
-            ctxFore.beginPath();
-            ctxFore.arc(gameXoffset + playerXPosition, gameYoffset + playerYposition * laneHeight, playerRadius, 0,
-                2 * Math.PI);
-            ctxFore.lineTo(gameXoffset + playerXPosition - playerRadius, gameYoffset + playerYposition * laneHeight);
-            ctxFore.moveTo(gameXoffset + playerXPosition, gameYoffset + (playerYposition * laneHeight) -
-                playerRadius);
-            ctxFore.lineTo(gameXoffset + playerXPosition, gameYoffset + (playerYposition * laneHeight) +
-                playerRadius);
-            ctxFore.strokeStyle = "rgb(255, 255, 255)";
-            ctxFore.stroke();
-            ctxFore.closePath();
-
-            ctxFore.beginPath();
-            ctxFore.rect(0, gameYoffset, gameXoffset, gameHeight);
-            ctxFore.rect(gameXoffset + gameWidth, gameYoffset, gameXoffset, gameHeight);
-            ctxFore.fillStyle = "rgb(0, 0, 0)";
-            ctxFore.fill();
-            ctxFore.closePath();
-
-        }
-
-        function updateUIVariables() {
-            if (canvasWidth != window.innerWidth || canvasHeight != window.innerHeight) {
-                backCanvas.width = window.innerWidth;
-                backCanvas.height = window.innerHeight;
-                healthCanvas.width = window.innerWidth;
-                healthCanvas.height = window.innerHeight;
-                audioCanvas.width = window.innerWidth;
-                audioCanvas.height = window.innerHeight;
-                foreCanvas.width = window.innerWidth;
-                foreCanvas.height = window.innerHeight;
-                canvasWidth = backCanvas.clientWidth;
-                canvasHeight = backCanvas.clientHeight;
-                if (canvasHeight < canvasWidth * 3 / 4) {
-                    gameHeight = (canvasHeight * 4) / 5;
-                    gameWidth = (gameHeight * 4) / 3;
-                } else {
-                    gameWidth = (canvasWidth * 4) / 5;
-                    gameHeight = (gameWidth * 3) / 4;
-                }
-                gameXoffset = (canvasWidth - gameWidth) / 2;
-                gameYoffset = (canvasHeight - gameHeight) / 2;
-                laneHeight = gameHeight / 4;
-                targetRadius = gameWidth / 40;
-                obstacleRadius = (gameWidth * 7) / 120;
-                playerRadius = gameWidth / 24;
-                scoreXposition = (gameWidth * 7) / 10;
-                scoreYposition = (gameHeight * 7) / 100;
-                healthXposition = gameWidth / 60;
-                healthXdistance = (gameWidth * 7) / 100;
-                healthYposition = gameHeight / 45;
-                playerXPosition = gameWidth * 3 / 20;
-                soundXposition = canvasWidth * 4 / 5;
-                soundYposition = canvasHeight / 45;
-
-                return true;
-            }
-
-            return false;
-        }
-
-        function pregame() {
-            updateUIVariables();
-            ctxBack.font = `${gameWidth / 20}px courier`;
-            ctxBack.fillStyle = "rgb(255, 255, 255)";
-            ctxBack.fillText("Press Spacebar to Play", gameXoffset + (gameWidth / 6), gameYoffset + (gameHeight * 4 /
-                9));
-            if (spacePressed) {
-                drawBackground(true);
-                drawHealth(true);
-                drawAudio(true);
-                song.play();
-                clearInterval(interval);
-                interval = setInterval(tick, 30);
-                spacePressed = false;
-            }
-        }
-
-        function checkForGameOver() {
-            if (health <= 0) {
-                clearInterval(interval);
-                ctxBack.clearRect(0, 0, canvasWidth, canvasHeight);
-                interval = setInterval(gameOver, 50);
-            }
-        }
-
-        function gameOver() {
-            manageMusic();
-            var updated = updateUIVariables();
-
-            ctxBack.clearRect(0, 0, canvasWidth, canvasHeight);
-            ctxHealth.clearRect(0, 0, canvasWidth, canvasHeight);
-            ctxFore.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            ctxBack.font = `${gameWidth / 20}px courier`;
-            ctxBack.fillStyle = "rgb(255, 255, 255)";
-            ctxBack.fillText("Press Spacebar to Play Again", gameXoffset + (gameWidth / 15), gameYoffset + (gameHeight *
-                5 / 18));
-            ctxBack.fillText(`Score: ${score}`, gameXoffset + (gameWidth / 3), gameYoffset + (gameHeight * 5 / 9));
-
-            ctxBack.font = `${gameWidth / 24}px courier`;
-            ctxBack.fillText('m:', soundXposition, soundYposition);
-            ctxBack.fillText('s:', soundXposition + targetRadius * 4, soundYposition);
-
-            drawAudio(updated);
-
-            if (spacePressed) {
-                targets = [];
-                obstacles = [];
-                score = 0;
-                health = 3;
-                drawBackground(true);
-                drawHealth(true);
-                clearInterval(interval);
-                interval = setInterval(tick, 30);
-                spacePressed = false;
-            }
-
-        }
-
-        interval = setInterval(pregame, 50);
+      interval = setInterval(pregame, 50);
     </script>
-
-</body>
-
+  </body>
 </html>
