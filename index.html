@@ -239,7 +239,7 @@
         function moveTargetsAndObstacles() {
             for (var i = 0; i < targets.length; i++) {
                 targets[i].xPosition -= gameWidth / 60;
-                if (targets[i].xPosition < 0 - (targetRadius + (targets[i] * targetRadius))) {
+                if (targets[i].xPosition < 0 - (targetRadius + (targets[i].size * targetRadius))) {
                     targets.splice(i, 1);
                     i--;
                 }
@@ -455,6 +455,12 @@
             if (canvasWidth != window.innerWidth || canvasHeight != window.innerHeight) {
                 backCanvas.width = window.innerWidth;
                 backCanvas.height = window.innerHeight;
+                healthCanvas.width = window.innerWidth;
+                healthCanvas.height = window.innerHeight;
+                audioCanvas.width = window.innerWidth;
+                audioCanvas.height = window.innerHeight;
+                foreCanvas.width = window.innerWidth;
+                foreCanvas.height = window.innerHeight;
                 canvasWidth = backCanvas.clientWidth;
                 canvasHeight = backCanvas.clientHeight;
                 if (canvasHeight < canvasWidth * 3 / 4) {
