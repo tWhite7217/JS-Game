@@ -186,18 +186,18 @@
               // Bottom left pressed
               downPressed = true;
             }
-          } else if (e.touches[i].clientY > soundYposition + 3 * targetRadius) {
+          } else if (e.touches[i].clientY > soundYposition * 3) {
             // Right half below sound options pressed
             spacePressed = true;
           } else if (
-            e.touches[i].clientX >= soundXposition &&
+            e.touches[i].clientX >= (soundXposition * 4) / 5 &&
             e.touches[i].clientX < soundXposition + targetRadius * 3.25
           ) {
             // Music button pressed
             song.volume = !song.volume;
           } else if (
-            e.touches[i].clientX > soundXposition + targetRadius * 3.5 &&
-            e.touches[i].clientX <= soundXposition + targetRadius * 8
+            e.touches[i].clientX >
+            soundXposition + targetRadius * 3.5
           ) {
             // Sound effect button pressed
             audio = !audio;
@@ -424,7 +424,17 @@
           ctxs["audio"].clearRect(0, 0, canvasWidth, canvasWidth);
           ctxs["audio"].fillStyle = "rgb(255, 255, 255)";
           ctxs["audio"].font = `${gameWidth / 24}px courier`;
-          ctxs["audio"].fillText("v0.2", 30, soundYposition);
+          //   ctxs["audio"].fillText("v0.2", 30, soundYposition);
+          ctxs["audio"].fillText(
+            "Music: bensound.com",
+            30,
+            soundYposition * 1.5
+          );
+          ctxs["audio"].fillText(
+            "Credits: github.com/tWhite7217/JS-Game",
+            gameXoffset + gameWidth / 40,
+            canvasHeight - soundYposition
+          );
           ctxs["audio"].fillText("m:", soundXposition, soundYposition);
           ctxs["audio"].fillText(
             "s:",
@@ -642,7 +652,7 @@
           healthYposition = gameHeight / 45;
           playerXPosition = (gameWidth * 3) / 20;
           soundXposition = (canvasWidth * 4) / 5;
-          soundYposition = canvasHeight / 45;
+          soundYposition = canvasHeight / 30;
 
           return true;
         }
@@ -652,13 +662,71 @@
 
       function pregame() {
         updateUIVariables();
-        ctxs["back"].font = `${gameWidth / 20}px courier`;
-        ctxs["back"].fillStyle = "rgb(255, 255, 255)";
-        ctxs["back"].fillText(
-          "Press Spacebar to Play",
-          gameXoffset + gameWidth / 6,
-          gameYoffset + (gameHeight * 4) / 9
+        ctxs["back"].beginPath();
+        ctxs["back"].strokeStyle = "rgb(255, 255, 255)";
+        ctxs["back"].moveTo(Math.round(canvasWidth / 2), 0);
+        ctxs["back"].lineTo(Math.round(canvasWidth / 2), canvasHeight);
+        ctxs["back"].moveTo(0, Math.round(canvasHeight / 2));
+        ctxs["back"].lineTo(
+          Math.round(canvasWidth / 2),
+          Math.round(canvasHeight / 2)
         );
+        ctxs["back"].stroke();
+        ctxs["back"].closePath();
+        ctxs["back"].font = `${canvasWidth / 34}px courier`;
+        ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+
+        //Up
+        ctxs["back"].fillText(
+          "Tap this section or",
+          canvasWidth / 20,
+          canvasHeight / 4 - canvasWidth / 20
+        );
+        ctxs["back"].fillText(
+          "press the Up arrow",
+          canvasWidth / 20,
+          canvasHeight / 4
+        );
+        ctxs["back"].fillText(
+          "to move the reticle up.",
+          canvasWidth / 20,
+          canvasHeight / 4 + canvasWidth / 20
+        );
+
+        //Down
+        ctxs["back"].fillText(
+          "Tap this section or",
+          canvasWidth / 20,
+          (canvasHeight * 3) / 4 - canvasWidth / 20
+        );
+        ctxs["back"].fillText(
+          "press the Down arrow",
+          canvasWidth / 20,
+          (canvasHeight * 3) / 4
+        );
+        ctxs["back"].fillText(
+          "to move the reticle down.",
+          canvasWidth / 20,
+          (canvasHeight * 3) / 4 + canvasWidth / 20
+        );
+
+        //Fire
+        ctxs["back"].fillText(
+          "Tap this section or",
+          (canvasWidth * 11) / 20,
+          canvasHeight / 2 - canvasWidth / 20
+        );
+        ctxs["back"].fillText(
+          "press the Spacebar",
+          (canvasWidth * 11) / 20,
+          canvasHeight / 2
+        );
+        ctxs["back"].fillText(
+          "to fire and to start.",
+          (canvasWidth * 11) / 20,
+          canvasHeight / 2 + canvasWidth / 20
+        );
+
         if (spacePressed) {
           drawBackground(true);
           drawHealth(true);
@@ -691,8 +759,8 @@
         ctxs["back"].font = `${gameWidth / 20}px courier`;
         ctxs["back"].fillStyle = "rgb(255, 255, 255)";
         ctxs["back"].fillText(
-          "Press Spacebar to Play Again",
-          gameXoffset + gameWidth / 15,
+          "Fire to Play Again",
+          gameXoffset + gameWidth / 5,
           gameYoffset + (gameHeight * 5) / 18
         );
         ctxs["back"].fillText(
