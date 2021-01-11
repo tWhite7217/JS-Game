@@ -24,6 +24,10 @@ var healthXdistance;
 var healthYposition;
 var soundXposition;
 export var soundYposition;
+var musicCreditXposition;
+var pregameFont;
+var pregameLeftTextX;
+var pregameLineSpacing;
 
 export var playerXPosition;
 
@@ -62,6 +66,7 @@ Draws the screen that shows when the game is initially loaded.
 */
 export function drawPregame() {
   // Lines that show the different touchscreen areas
+  ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
   ctxs["back"].beginPath();
   ctxs["back"].strokeStyle = "rgb(255, 255, 255)";
   ctxs["back"].moveTo(Math.round(canvasWidth / 2), 0);
@@ -75,48 +80,48 @@ export function drawPregame() {
   ctxs["back"].closePath();
 
   // Setting up text settings
-  ctxs["back"].font = `${canvasWidth / 34}px courier`;
+  ctxs["back"].font = `${pregameFont}px courier`;
   ctxs["back"].fillStyle = "rgb(255, 255, 255)";
 
   // Explains controls to move reticle up
   ctxs["back"].fillText(
     "Tap this section or",
-    canvasWidth / 20,
-    canvasHeight / 4 - canvasWidth / 20
+    pregameLeftTextX,
+    canvasHeight / 4 - pregameLineSpacing
   );
   ctxs["back"].fillText(
     "press the Up arrow",
-    canvasWidth / 20,
+    pregameLeftTextX,
     canvasHeight / 4
   );
   ctxs["back"].fillText(
     "to move the reticle up.",
-    canvasWidth / 20,
-    canvasHeight / 4 + canvasWidth / 20
+    pregameLeftTextX,
+    canvasHeight / 4 + pregameLineSpacing
   );
 
   // Explains controls to move reticle down
   ctxs["back"].fillText(
     "Tap this section or",
-    canvasWidth / 20,
-    (canvasHeight * 3) / 4 - canvasWidth / 20
+    pregameLeftTextX,
+    (canvasHeight * 3) / 4 - pregameLineSpacing
   );
   ctxs["back"].fillText(
     "press the Down arrow",
-    canvasWidth / 20,
+    pregameLeftTextX,
     (canvasHeight * 3) / 4
   );
   ctxs["back"].fillText(
     "to move the reticle down.",
-    canvasWidth / 20,
-    (canvasHeight * 3) / 4 + canvasWidth / 20
+    pregameLeftTextX,
+    (canvasHeight * 3) / 4 + pregameLineSpacing
   );
 
   // Explains controls to fire
   ctxs["back"].fillText(
     "Tap this section or",
     (canvasWidth * 11) / 20,
-    canvasHeight / 2 - canvasWidth / 20
+    canvasHeight / 2 - pregameLineSpacing
   );
   ctxs["back"].fillText(
     "press the Spacebar",
@@ -126,7 +131,59 @@ export function drawPregame() {
   ctxs["back"].fillText(
     "to fire and to start.",
     (canvasWidth * 11) / 20,
-    canvasHeight / 2 + canvasWidth / 20
+    canvasHeight / 2 + pregameLineSpacing
+  );
+
+  // Explains game objectives
+  ctxs["back"].fillText(
+    "Avoid red squares.",
+    (canvasWidth * 11) / 20,
+    canvasHeight / 6 - pregameLineSpacing
+  );
+  ctxs["back"].fillText(
+    "Fire at green circles",
+    (canvasWidth * 11) / 20,
+    canvasHeight / 6
+  );
+  ctxs["back"].fillText(
+    "to increase score.",
+    (canvasWidth * 11) / 20,
+    canvasHeight / 6 + pregameLineSpacing
+  );
+  ctxs["back"].fillText(
+    "Fire at hearts to heal.",
+    (canvasWidth * 11) / 20,
+    canvasHeight / 6 + pregameLineSpacing * 2
+  );
+  ctxs["back"].beginPath();
+  ctxs["back"].arc(
+    (canvasWidth * 11) / 20 - pregameLineSpacing + pregameFont / 2,
+    canvasHeight / 6 + pregameFont / 2,
+    pregameFont / 2,
+    0,
+    2 * Math.PI
+  );
+  ctxs["back"].fillStyle = "rgb(34, 139, 34)";
+  ctxs["back"].fill();
+  ctxs["back"].closePath();
+
+  ctxs["back"].beginPath();
+  ctxs["back"].rect(
+    (canvasWidth * 11) / 20 - pregameLineSpacing,
+    canvasHeight / 6 - gameWidth / 22 - pregameFont,
+    pregameFont,
+    pregameFont
+  );
+  ctxs["back"].fillStyle = "rgb(220, 20, 60)";
+  ctxs["back"].fill();
+  ctxs["back"].closePath();
+
+  ctxs["health"].drawImage(
+    heartImage,
+    (canvasWidth * 11) / 20 - pregameLineSpacing,
+    canvasHeight / 6 + gameWidth / 9 - pregameFont,
+    pregameFont,
+    pregameFont
   );
 }
 
@@ -192,7 +249,11 @@ export function drawAudio(updated, audio, volume) {
     ctxs["audio"].fillStyle = "rgb(255, 255, 255)";
     ctxs["audio"].font = `${gameWidth / 24}px courier`;
     //   ctxs["audio"].fillText("v0.2", 30, soundYposition);
-    ctxs["audio"].fillText("Music: bensound.com", 30, soundYposition * 1.5);
+    ctxs["audio"].fillText(
+      "Music: bensound.com",
+      musicCreditXposition,
+      soundYposition * 1.5
+    );
     ctxs["audio"].fillText(
       "Credits: github.com/tWhite7217/JS-Game",
       gameXoffset + gameWidth / 40,
@@ -353,8 +414,10 @@ export function drawBorder(updated) {
 /*
 Draws the canvas that shows the game over screen.
 score: The player's final score.
+newHighScore: True if new high score set. False otherwise.
 */
-export function drawGameOver(score) {
+export function drawGameOver(score, newHighScore) {
+  ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
   ctxs["back"].font = `${gameWidth / 20}px courier`;
   ctxs["back"].fillStyle = "rgb(255, 255, 255)";
   ctxs["back"].fillText(
@@ -367,6 +430,18 @@ export function drawGameOver(score) {
     gameXoffset + gameWidth / 3,
     gameYoffset + (gameHeight * 5) / 9
   );
+  ctxs["back"].fillText(
+    `High score: ${localStorage.getItem("high-score")}`,
+    gameXoffset + gameWidth / 4,
+    gameYoffset + (gameHeight * 2) / 3
+  );
+  if (newHighScore) {
+    ctxs["back"].fillText(
+      "New high score!",
+      gameXoffset + gameWidth / 4,
+      gameYoffset + (gameHeight * 4) / 9
+    );
+  }
 }
 
 /*
@@ -411,15 +486,18 @@ function drawCircles(obstacles, targets) {
   ctxs["circles"].fillStyle = "rgb(220, 20, 60)";
   for (var i = 0; i < obstacles.length; i++) {
     ctxs["circles"].moveTo(
-      Math.round(gameXoffset + obstacles[i].xPosition),
-      Math.round(gameYoffset + obstacles[i].yPosition * laneHeight)
+      Math.round(gameXoffset + obstacles[i].xPosition - obstacleRadius),
+      Math.round(
+        gameYoffset + obstacles[i].yPosition * laneHeight - obstacleRadius
+      )
     );
-    ctxs["circles"].arc(
-      Math.round(gameXoffset + obstacles[i].xPosition),
-      Math.round(gameYoffset + obstacles[i].yPosition * laneHeight),
-      Math.round(obstacleRadius),
-      0,
-      2 * Math.PI
+    ctxs["circles"].rect(
+      Math.round(gameXoffset + obstacles[i].xPosition - obstacleRadius),
+      Math.round(
+        gameYoffset + obstacles[i].yPosition * laneHeight - obstacleRadius
+      ),
+      Math.round(2 * obstacleRadius),
+      Math.round(2 * obstacleRadius)
     );
   }
   ctxs["circles"].fill();
@@ -482,7 +560,7 @@ export function updateUIVariables() {
     laneHeight = gameHeight / 4;
     targetRadius = gameWidth / 40;
     obstacleRadius = (gameWidth * 7) / 120;
-    playerRadius = gameWidth / 24;
+    playerRadius = gameWidth / 45;
     scoreXposition = (gameWidth * 7) / 10;
     scoreYposition = (gameHeight * 7) / 100;
     healthXposition = gameWidth / 60;
@@ -491,6 +569,10 @@ export function updateUIVariables() {
     playerXPosition = (gameWidth * 3) / 20;
     soundXposition = (canvasWidth * 4) / 5;
     soundYposition = canvasHeight / 30;
+    musicCreditXposition = canvasWidth / 15;
+    pregameFont = gameWidth / 28;
+    pregameLeftTextX = canvasWidth / 20;
+    pregameLineSpacing = gameWidth / 20;
 
     return true;
   }

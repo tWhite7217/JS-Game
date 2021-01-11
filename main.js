@@ -237,6 +237,20 @@ function pregame() {
 }
 
 /*
+Checks if the player set a new high score. If so,
+  localStorage is used to save the score.
+returns: True if new high score set. False otherwise.
+*/
+function checkHighScore() {
+  var highScore = localStorage.getItem("high-score");
+  if (!highScore || score > highScore) {
+    localStorage.setItem("high-score", score);
+    return true;
+  }
+  return false;
+}
+
+/*
 Checks if the player has lost all their health.
   If so, the game over state begins.
 */
@@ -245,7 +259,8 @@ function checkForGameOver() {
     clearInterval(interval);
     clearCanvases();
     drawAudio(true);
-    interval = setInterval(gameOver, 50);
+    var newHighScore = checkHighScore();
+    interval = setInterval(() => gameOver(newHighScore), 50);
   }
 }
 
@@ -253,13 +268,14 @@ function checkForGameOver() {
 The code that runs after a player has lost all health.
   Shows the player's score and enter a new game if
   the player fires.
+newHighScore: True if new high score set. False otherwise.
 */
-function gameOver() {
+function gameOver(newHighScore) {
   manageMusic();
   var updated = updateUIVariables();
 
-  drawGameOver(score);
-  drawAudio(updated);
+  drawGameOver(score, newHighScore);
+  drawAudio(updated, audio, song.volume);
 
   if (spacePressed) {
     targets = [];
