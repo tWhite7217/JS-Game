@@ -39,6 +39,7 @@ var health = 3;
 var playerYposition = 2;
 var showFired = false;
 var timeFired;
+var hitTarget = false;
 
 const iterationsPerSpawn = 25;
 const maxMsPerIteration = 30;
@@ -70,6 +71,7 @@ Determines if a target has been hit by the player.
 */
 function targetHit() {
   if (spacePressed) {
+    hitTarget = false;
     setSpacePressed(false);
     showFired = true;
     timeFired = Date.now();
@@ -85,6 +87,7 @@ function targetHit() {
         score += targets[i].pointValue;
         targets.splice(i, 1);
         i--;
+        hitTarget = true;
       }
     }
   }
@@ -167,12 +170,19 @@ function tick(lastTime) {
   } else {
     count += timeChange;
   }
-  // console.log(targets);
   targetHit();
   obstacleHit();
   move();
   moveTargetsAndObstacles(timeChange);
-  updateUI(obstacles, targets, health, score, playerYposition, showFired);
+  updateUI(
+    obstacles,
+    targets,
+    health,
+    score,
+    playerYposition,
+    showFired,
+    hitTarget
+  );
   animation = requestAnimationFrame(() => tick(now));
   checkForGameOver();
 }

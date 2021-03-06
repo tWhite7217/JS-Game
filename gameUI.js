@@ -9,6 +9,13 @@ const outlineWidth = 4;
 const playerLineWidth = 2;
 const sqrt2 = Math.SQRT2;
 
+const targetColor = "rgb(34, 139, 34)";
+const white = "rgb(255, 255, 255)";
+const black = "rgb(0, 0, 0)";
+const obstacleColor = "rgb(220, 20, 60)";
+const borderColor = "rgb(221, 160, 221)";
+const missedColor = "rgb(255, 222, 74)";
+
 export var canvasWidth;
 export var canvasHeight;
 export var gameWidth;
@@ -66,7 +73,7 @@ export function drawPregame() {
   // Lines that show the different touchscreen areas
   ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
   ctxs["back"].beginPath();
-  ctxs["back"].strokeStyle = "rgb(255, 255, 255)";
+  ctxs["back"].strokeStyle = white;
   ctxs["back"].moveTo(Math.round(canvasWidth / 2), 0);
   ctxs["back"].lineTo(Math.round(canvasWidth / 2), canvasHeight);
   ctxs["back"].moveTo(0, Math.round(canvasHeight / 2));
@@ -79,7 +86,7 @@ export function drawPregame() {
 
   // Setting up text settings
   ctxs["back"].font = `${pregameFont}px courier`;
-  ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+  ctxs["back"].fillStyle = white;
 
   // Explains controls to move reticle up
   ctxs["back"].fillText(
@@ -161,7 +168,7 @@ export function drawPregame() {
     0,
     2 * Math.PI
   );
-  ctxs["back"].fillStyle = "rgb(34, 139, 34)";
+  ctxs["back"].fillStyle = targetColor;
   ctxs["back"].fill();
   ctxs["back"].closePath();
 
@@ -172,7 +179,7 @@ export function drawPregame() {
     pregameFont,
     pregameFont
   );
-  ctxs["back"].fillStyle = "rgb(220, 20, 60)";
+  ctxs["back"].fillStyle = obstacleColor;
   ctxs["back"].fill();
   ctxs["back"].closePath();
 
@@ -196,7 +203,6 @@ export function drawBackground(updated) {
     //Draws the three "lanes" that make up the game's background
     ctxs["back"].beginPath();
     [1, 2, 3].forEach((i) => {
-      console.log(i);
       ctxs["back"].rect(
         Math.round(gameXoffset),
         Math.round(gameYoffset + laneHeight * i - 1),
@@ -204,7 +210,7 @@ export function drawBackground(updated) {
         2
       );
     });
-    ctxs["back"].fillStyle = "rgb(221, 160, 221)";
+    ctxs["back"].fillStyle = borderColor;
     ctxs["back"].fill();
     ctxs["back"].closePath();
   }
@@ -241,7 +247,7 @@ score: The player's current score.
 export function drawScore(updated, score) {
   if (updated || score !== prevScore) {
     ctxs["score"].clearRect(0, 0, canvasWidth, canvasHeight);
-    ctxs["score"].fillStyle = "rgb(255, 255, 255)";
+    ctxs["score"].fillStyle = white;
     ctxs["score"].font = `${gameWidth / 24}px courier`;
     ctxs["score"].fillText(
       `Score: ${score}`,
@@ -258,7 +264,7 @@ Draws the canvas that shows the player's reticle. Only draws
 updated: True if the canvas size has changed. False otherwise.
 playerYposition: The player's current y position.
 */
-export function drawPlayer(updated, playerYposition, showFired) {
+export function drawPlayer(updated, playerYposition, showFired, hitTarget) {
   if (updated || playerYposition !== prevY || showFired !== prevShowFired) {
     ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
     ctxs["player"].beginPath();
@@ -285,7 +291,7 @@ export function drawPlayer(updated, playerYposition, showFired) {
       Math.round(gameYoffset + playerYposition * laneHeight + playerRadius)
     );
 
-    ctxs["player"].strokeStyle = "rgb(255, 255, 255)";
+    ctxs["player"].strokeStyle = white;
     ctxs["player"].lineWidth = playerLineWidth;
     ctxs["player"].stroke();
     ctxs["player"].closePath();
@@ -326,7 +332,11 @@ export function drawPlayer(updated, playerYposition, showFired) {
         );
       }
 
-      ctxs["player"].strokeStyle = "rgb(255, 222, 74)";
+      if (hitTarget) {
+        ctxs["player"].strokeStyle = targetColor;
+      } else {
+        ctxs["player"].strokeStyle = missedColor;
+      }
       ctxs["player"].stroke();
       ctxs["player"].closePath();
     }
@@ -359,7 +369,7 @@ export function drawBorder(updated) {
       Math.round(gameXoffset),
       Math.round(gameHeight)
     );
-    ctxs["border"].fillStyle = "rgb(0, 0, 0)";
+    ctxs["border"].fillStyle = black;
     ctxs["border"].fill();
     ctxs["border"].closePath();
 
@@ -371,13 +381,13 @@ export function drawBorder(updated) {
       Math.round(gameWidth),
       Math.round(gameHeight)
     );
-    ctxs["border"].strokeStyle = "rgb(221, 160, 221)";
+    ctxs["border"].strokeStyle = borderColor;
     ctxs["border"].lineWidth = outlineWidth;
     ctxs["border"].stroke();
     ctxs["border"].closePath();
 
     // Draws text pointing to the GitHub
-    ctxs["border"].fillStyle = "rgb(255, 255, 255)";
+    ctxs["border"].fillStyle = white;
     ctxs["border"].font = `${gameWidth / 24}px courier`;
     // ctxs["border"].fillText("v0.2", 30, githubTextYposition * 1.5);
     ctxs["border"].fillText(
@@ -396,7 +406,7 @@ newHighScore: True if new high score set. False otherwise.
 export function drawGameOver(score, newHighScore) {
   ctxs["back"].clearRect(0, 0, canvasWidth, canvasHeight);
   ctxs["back"].font = `${gameWidth / 20}px courier`;
-  ctxs["back"].fillStyle = "rgb(255, 255, 255)";
+  ctxs["back"].fillStyle = white;
   ctxs["back"].fillText(
     "Fire to Play Again",
     gameXoffset + gameWidth / 5,
@@ -430,7 +440,7 @@ function drawCircles(obstacles, targets) {
   ctxs["circles"].clearRect(0, 0, canvasWidth, canvasHeight);
 
   ctxs["circles"].beginPath();
-  ctxs["circles"].fillStyle = "rgb(34, 139, 34)";
+  ctxs["circles"].fillStyle = targetColor;
   for (var i = 0; i < targets.length; i++) {
     if (targets[i].givesHealth) {
       ctxs["circles"].drawImage(
@@ -460,7 +470,7 @@ function drawCircles(obstacles, targets) {
   ctxs["circles"].closePath();
 
   ctxs["circles"].beginPath();
-  ctxs["circles"].fillStyle = "rgb(220, 20, 60)";
+  ctxs["circles"].fillStyle = obstacleColor;
   for (var i = 0; i < obstacles.length; i++) {
     ctxs["circles"].moveTo(
       Math.round(gameXoffset + obstacles[i].xPosition - obstacleRadius),
@@ -496,14 +506,15 @@ export function updateUI(
   health,
   score,
   playerYposition,
-  showFired
+  showFired,
+  hitTarget
 ) {
   var updated = updateUIVariables();
 
   drawBackground(updated);
   drawHealth(updated, health);
   drawScore(updated, score);
-  drawPlayer(updated, playerYposition, showFired);
+  drawPlayer(updated, playerYposition, showFired, hitTarget);
   drawBorder(updated);
   drawCircles(obstacles, targets);
 }
