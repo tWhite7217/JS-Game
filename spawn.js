@@ -4,7 +4,7 @@ Author: Tommy White
 Contains code for spawning obstacles and targets the JavaScript game.
 */
 
-import { gameWidth, targetRadius, obstacleRadius } from "./gameUI.js";
+import { gameWidth, obstacleRadius } from "./gameUI.js";
 
 class Obstacle {
   constructor(yPos) {

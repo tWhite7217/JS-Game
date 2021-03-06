@@ -18,8 +18,8 @@ import {
   clearCanvases,
   playerXPosition,
   obstacleRadius,
-  targetRadius,
   gameWidth,
+  getTargetRadius,
 } from "./gameUI.js";
 
 import {
@@ -81,11 +81,23 @@ var score = 0;
 var health = 3;
 var playerYposition = 2;
 
-const minCount = 10;
-const countRange = 15;
+const iterationsPerSpawn = 25;
+const maxMsPerIteration = 30;
+const minMsPerIteration = 12;
+const movementPerIteration = 60;
+const scoreForMaxDifficulty = 400; // Higher = easier
+
+function scaledMsPerIteration() {
+  return Math.max(
+    maxMsPerIteration -
+      (maxMsPerIteration - minMsPerIteration) * (score / scoreForMaxDifficulty),
+    minMsPerIteration
+  );
+}
+
 var count = 0;
 
-var interval;
+var animation;
 
 var targets = [];
 var obstacles = [];
@@ -107,7 +119,7 @@ function targetHit() {
       if (
         targets[i].yPosition === playerYposition &&
         Math.abs(targets[i].xPosition - playerXPosition) <=
-          targetRadius + targetRadius * targets[i].size
+          getTargetRadius(targets[i].size)
       ) {
         if (targets[i].givesHealth) {
           health += 1;
@@ -166,19 +178,18 @@ Updates the positions of all targets and obstacles.
   Removes any from the arrays that are no longer in
   the play space.
 */
-function moveTargetsAndObstacles() {
+function moveTargetsAndObstacles(timeChange) {
+  let movement =
+    ((gameWidth / movementPerIteration) * timeChange) / scaledMsPerIteration();
   for (var i = 0; i < targets.length; i++) {
-    targets[i].xPosition -= gameWidth / 60;
-    if (
-      targets[i].xPosition <
-      0 - (targetRadius + targets[i].size * targetRadius)
-    ) {
+    targets[i].xPosition -= movement;
+    if (targets[i].xPosition < 0 - getTargetRadius(targets[i].size)) {
       targets.splice(i, 1);
       i--;
     }
   }
   for (var i = 0; i < obstacles.length; i++) {
-    obstacles[i].xPosition -= gameWidth / 60;
+    obstacles[i].xPosition -= movement;
     if (obstacles[i].xPosition < 0 - obstacleRadius) {
       obstacles.splice(i, 1);
       i--;
@@ -187,19 +198,25 @@ function moveTargetsAndObstacles() {
 }
 
 /*
-The game logic that occurs every 30ms.
+The game logic that occurs every animation frame.
 */
-function tick() {
-  if (count >= minCount + Math.floor(countRange / (1 + score / 20))) {
+function tick(lastTime) {
+  let now = Date.now();
+  let timeChange = now - lastTime;
+  // console.log(timeChange);
+  // console.log(count);
+  let msThreshold = iterationsPerSpawn * scaledMsPerIteration();
+  if (count >= msThreshold) {
     spawn(Math.floor(Math.random() * 11), obstacles, targets);
-    count = 0;
+    count = count % msThreshold;
   } else {
-    count++;
+    count += timeChange;
   }
+  // console.log(targets);
   targetHit();
   obstacleHit();
   move();
-  moveTargetsAndObstacles();
+  moveTargetsAndObstacles(timeChange);
   updateUI(
     obstacles,
     targets,
@@ -209,6 +226,7 @@ function tick() {
     score,
     playerYposition
   );
+  animation = requestAnimationFrame(() => tick(now));
   checkForGameOver();
   manageMusic();
 }
@@ -222,6 +240,8 @@ function pregame() {
 
   drawPregame();
 
+  animation = requestAnimationFrame(pregame);
+
   if (spacePressed) {
     drawBackground(true);
     drawHealth(true, health);
@@ -230,8 +250,8 @@ function pregame() {
     drawPlayer(true, playerYposition);
     drawBorder(true);
     song.play();
-    clearInterval(interval);
-    interval = setInterval(tick, 30);
+    cancelAnimationFrame(animation);
+    animation = requestAnimationFrame(() => tick(Date.now()));
     setSpacePressed(false);
   }
 }
@@ -256,11 +276,11 @@ Checks if the player has lost all their health.
 */
 function checkForGameOver() {
   if (health <= 0) {
-    clearInterval(interval);
     clearCanvases();
     drawAudio(true);
     var newHighScore = checkHighScore();
-    interval = setInterval(() => gameOver(newHighScore), 50);
+    cancelAnimationFrame(animation);
+    animation = requestAnimationFrame(() => gameOver(newHighScore));
   }
 }
 
@@ -277,6 +297,8 @@ function gameOver(newHighScore) {
   drawGameOver(score, newHighScore);
   drawAudio(updated, audio, song.volume);
 
+  animation = requestAnimationFrame(() => gameOver(newHighScore));
+
   if (spacePressed) {
     targets = [];
     obstacles = [];
@@ -287,10 +309,10 @@ function gameOver(newHighScore) {
     drawScore(true);
     drawPlayer(true, playerYposition);
     drawBorder(true);
-    clearInterval(interval);
-    interval = setInterval(tick, 30);
+    cancelAnimationFrame(animation);
+    animation = requestAnimationFrame(() => tick(Date.now()));
     setSpacePressed(false);
   }
 }
 
-interval = setInterval(pregame, 50);
+animation = requestAnimationFrame(pregame);

@@ -10,7 +10,10 @@ const outlineWidth = 4;
 export var canvasWidth;
 export var canvasHeight;
 export var gameWidth;
-export var targetRadius;
+var uiElementsRadius;
+var baseTargetRadius;
+var maxTargetRadius;
+var targetRadiusStep;
 export var obstacleRadius;
 var gameHeight;
 var gameXoffset;
@@ -60,6 +63,10 @@ canvasIds.forEach((id) => {
   canvases[id].height = window.innerHeight;
   ctxs[id] = canvases[id].getContext("2d");
 });
+
+export function getTargetRadius(size) {
+  return baseTargetRadius + size * targetRadiusStep;
+}
 
 /*
 Draws the screen that shows when the game is initially loaded.
@@ -226,8 +233,8 @@ export function drawHealth(updated, health) {
         heartImage,
         Math.round(gameXoffset + healthXposition + healthXdistance * i),
         Math.round(gameYoffset + healthYposition),
-        Math.round(targetRadius * 2),
-        Math.round(targetRadius * 2)
+        Math.round(uiElementsRadius * 2),
+        Math.round(uiElementsRadius * 2)
       );
     }
     prevHealth = health;
@@ -264,43 +271,43 @@ export function drawAudio(updated, audio, volume) {
     ctxs["audio"].fillText("m:", soundXposition, soundYposition);
     ctxs["audio"].fillText(
       "s:",
-      Math.round(soundXposition + targetRadius * 4),
+      Math.round(soundXposition + uiElementsRadius * 4),
       Math.round(soundYposition)
     );
 
     // Draws the music and speaker symbols
     ctxs["audio"].drawImage(
       musicImage,
-      Math.round(soundXposition + targetRadius),
+      Math.round(soundXposition + uiElementsRadius),
       Math.round(soundYposition),
-      Math.round(targetRadius * 2),
-      Math.round(targetRadius * 2)
+      Math.round(uiElementsRadius * 2),
+      Math.round(uiElementsRadius * 2)
     );
     ctxs["audio"].drawImage(
       speakerImage,
-      Math.round(soundXposition + targetRadius * 5),
+      Math.round(soundXposition + uiElementsRadius * 5),
       Math.round(soundYposition),
-      Math.round(targetRadius * 2),
-      Math.round(targetRadius * 2)
+      Math.round(uiElementsRadius * 2),
+      Math.round(uiElementsRadius * 2)
     );
 
     // Draws "no" symbols over the audio symbols if they have been muted
     if (!volume) {
       ctxs["audio"].drawImage(
         noImage,
-        Math.round(soundXposition + targetRadius),
+        Math.round(soundXposition + uiElementsRadius),
         Math.round(soundYposition),
-        Math.round(targetRadius * 2),
-        Math.round(targetRadius * 2)
+        Math.round(uiElementsRadius * 2),
+        Math.round(uiElementsRadius * 2)
       );
     }
     if (!audio) {
       ctxs["audio"].drawImage(
         noImage,
-        Math.round(soundXposition + targetRadius * 5),
+        Math.round(soundXposition + uiElementsRadius * 5),
         Math.round(soundYposition),
-        Math.round(targetRadius * 2),
-        Math.round(targetRadius * 2)
+        Math.round(uiElementsRadius * 2),
+        Math.round(uiElementsRadius * 2)
       );
     }
     prevAudio = audio;
@@ -458,12 +465,12 @@ function drawCircles(obstacles, targets) {
     if (targets[i].givesHealth) {
       ctxs["circles"].drawImage(
         heartImage,
-        Math.round(gameXoffset + targets[i].xPosition - targetRadius),
+        Math.round(gameXoffset + targets[i].xPosition - baseTargetRadius),
         Math.round(
-          gameYoffset + targets[i].yPosition * laneHeight - targetRadius
+          gameYoffset + targets[i].yPosition * laneHeight - baseTargetRadius
         ),
-        Math.round(targetRadius * 2),
-        Math.round(targetRadius * 2)
+        Math.round(baseTargetRadius * 2),
+        Math.round(baseTargetRadius * 2)
       );
     } else {
       ctxs["circles"].moveTo(
@@ -473,7 +480,7 @@ function drawCircles(obstacles, targets) {
       ctxs["circles"].arc(
         Math.round(gameXoffset + targets[i].xPosition),
         Math.round(gameYoffset + targets[i].yPosition * laneHeight),
-        Math.round(targets[i].size * targetRadius + targetRadius),
+        Math.round(getTargetRadius(targets[i].size)),
         0,
         2 * Math.PI
       );
@@ -558,7 +565,10 @@ export function updateUIVariables() {
     gameXoffset = (canvasWidth - gameWidth) / 2;
     gameYoffset = (canvasHeight - gameHeight) / 2;
     laneHeight = gameHeight / 4;
-    targetRadius = gameWidth / 40;
+    uiElementsRadius = gameWidth / 40;
+    baseTargetRadius = gameWidth / 30;
+    maxTargetRadius = gameWidth / 15;
+    targetRadiusStep = (maxTargetRadius - baseTargetRadius) / 2;
     obstacleRadius = (gameWidth * 7) / 120;
     playerRadius = gameWidth / 45;
     scoreXposition = (gameWidth * 7) / 10;
