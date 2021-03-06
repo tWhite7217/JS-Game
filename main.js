@@ -45,35 +45,35 @@ var song = new Audio("silence.mp3");
 var laserSound = new Audio("laser-shot-quiet.mp3");
 var damageTakenSound = new Audio("damage.mp3");
 
-function manageMusic() {
-  if (mPressed) {
-    song.volume = !song.volume;
-    setMPressed(false);
-  }
-  if (sPressed) {
-    audio = !audio;
-    setSPressed(false);
-  }
-  if (song.paused) {
-    oldVolume = song.volume;
-    switch (Math.floor(Math.random() * 4)) {
-      case 0:
-        song = new Audio("bensound-scifi.mp3");
-        break;
-      case 1:
-        song = new Audio("bensound-newdawn.mp3");
-        break;
-      case 2:
-        song = new Audio("bensound-evolution.mp3");
-        break;
-      case 3:
-        song = new Audio("bensound-deepblue.mp3");
-        break;
-    }
-    song.play();
-    song.volume = oldVolume;
-  }
-}
+// function manageMusic() {
+//   if (mPressed) {
+//     song.volume = !song.volume;
+//     setMPressed(false);
+//   }
+//   if (sPressed) {
+//     audio = !audio;
+//     setSPressed(false);
+//   }
+//   if (song.paused) {
+//     oldVolume = song.volume;
+//     switch (Math.floor(Math.random() * 4)) {
+//       case 0:
+//         song = new Audio("bensound-scifi.mp3");
+//         break;
+//       case 1:
+//         song = new Audio("bensound-newdawn.mp3");
+//         break;
+//       case 2:
+//         song = new Audio("bensound-evolution.mp3");
+//         break;
+//       case 3:
+//         song = new Audio("bensound-deepblue.mp3");
+//         break;
+//     }
+//     song.play();
+//     song.volume = oldVolume;
+//   }
+// }
 
 //Other variables used for logic and data storage
 
@@ -85,7 +85,7 @@ const iterationsPerSpawn = 25;
 const maxMsPerIteration = 30;
 const minMsPerIteration = 12;
 const movementPerIteration = 60;
-const scoreForMaxDifficulty = 400; // Higher = easier
+const scoreForMaxDifficulty = 100; // Higher = easier
 
 function scaledMsPerIteration() {
   return Math.max(
@@ -203,8 +203,6 @@ The game logic that occurs every animation frame.
 function tick(lastTime) {
   let now = Date.now();
   let timeChange = now - lastTime;
-  // console.log(timeChange);
-  // console.log(count);
   let msThreshold = iterationsPerSpawn * scaledMsPerIteration();
   if (count >= msThreshold) {
     spawn(Math.floor(Math.random() * 11), obstacles, targets);
@@ -228,7 +226,7 @@ function tick(lastTime) {
   );
   animation = requestAnimationFrame(() => tick(now));
   checkForGameOver();
-  manageMusic();
+  // manageMusic();
 }
 
 /*
@@ -277,7 +275,7 @@ Checks if the player has lost all their health.
 function checkForGameOver() {
   if (health <= 0) {
     clearCanvases();
-    drawAudio(true);
+    drawAudio(true, audio, song.volume);
     var newHighScore = checkHighScore();
     cancelAnimationFrame(animation);
     animation = requestAnimationFrame(() => gameOver(newHighScore));
@@ -291,7 +289,7 @@ The code that runs after a player has lost all health.
 newHighScore: True if new high score set. False otherwise.
 */
 function gameOver(newHighScore) {
-  manageMusic();
+  // manageMusic();
   var updated = updateUIVariables();
 
   drawGameOver(score, newHighScore);
