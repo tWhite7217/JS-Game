@@ -7,7 +7,7 @@ The port includes a number of updates, such as sound effects, music, and window 
 ## Game Description
 This is a game where you shoot a laser cannon.  
 Use the arrow keys to move and space to shoot.  
-Avoid the red circles and shoot the green circles.
+Avoid the red squares and shoot the green circles.
 
 ## Credits
 
