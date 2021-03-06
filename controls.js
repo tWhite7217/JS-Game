@@ -4,13 +4,11 @@ Author: Tommy White
 Contains the controls logic for the JavaScript game.
 */
 
-import { canvasWidth, canvasHeight, soundYposition } from "./gameUI.js";
+import { canvasWidth, canvasHeight } from "./gameUI.js";
 
 export var upPressed = false;
 export var downPressed = false;
 export var spacePressed = false;
-export var mPressed = false;
-export var sPressed = false;
 var upLock = false;
 var downLock = false;
 var spaceLock = false;
@@ -53,10 +51,6 @@ function keyDownHandler(e) {
   } else if ((e.key === " " || e.key === "Spacebar") && !spaceLock) {
     spacePressed = true;
     spaceLock = true;
-  } else if (e.key === "s") {
-    sPressed = true;
-  } else if (e.key === "m") {
-    mPressed = true;
   }
 }
 
@@ -89,18 +83,9 @@ function touchHandler(e) {
         // Bottom left pressed
         downPressed = true;
       }
-    } else if (e.touches[i].clientY > soundYposition * 3) {
-      // Right half below sound options pressed
+    } else {
+      // Right half pressed
       spacePressed = true;
-    } else if (
-      e.touches[i].clientX >= (soundXposition * 4) / 5 &&
-      e.touches[i].clientX < soundXposition + targetRadius * 3.25
-    ) {
-      // Music button pressed
-      song.volume = !song.volume;
-    } else if (e.touches[i].clientX > soundXposition + targetRadius * 3.5) {
-      // Sound effect button pressed
-      audio = !audio;
     }
   }
 }

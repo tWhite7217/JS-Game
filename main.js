@@ -7,7 +7,6 @@ Contains the main logic for the JavaScript game.
 import {
   updateUIVariables,
   updateUI,
-  drawAudio,
   drawBackground,
   drawBorder,
   drawHealth,
@@ -26,66 +25,27 @@ import {
   upPressed,
   downPressed,
   spacePressed,
-  mPressed,
-  sPressed,
   setUpPressed,
   setDownPressed,
   setSpacePressed,
-  setMPressed,
-  setSPressed,
 } from "./controls.js";
 
 import { spawn } from "./spawn.js";
-
-//Variables and function for managing music and sound effects
-
-var audio = 0;
-var oldVolume;
-var song = new Audio("silence.mp3");
-var laserSound = new Audio("laser-shot-quiet.mp3");
-var damageTakenSound = new Audio("damage.mp3");
-
-// function manageMusic() {
-//   if (mPressed) {
-//     song.volume = !song.volume;
-//     setMPressed(false);
-//   }
-//   if (sPressed) {
-//     audio = !audio;
-//     setSPressed(false);
-//   }
-//   if (song.paused) {
-//     oldVolume = song.volume;
-//     switch (Math.floor(Math.random() * 4)) {
-//       case 0:
-//         song = new Audio("bensound-scifi.mp3");
-//         break;
-//       case 1:
-//         song = new Audio("bensound-newdawn.mp3");
-//         break;
-//       case 2:
-//         song = new Audio("bensound-evolution.mp3");
-//         break;
-//       case 3:
-//         song = new Audio("bensound-deepblue.mp3");
-//         break;
-//     }
-//     song.play();
-//     song.volume = oldVolume;
-//   }
-// }
 
 //Other variables used for logic and data storage
 
 var score = 0;
 var health = 3;
 var playerYposition = 2;
+var showFired = false;
+var timeFired;
 
 const iterationsPerSpawn = 25;
 const maxMsPerIteration = 30;
 const minMsPerIteration = 12;
 const movementPerIteration = 60;
-const scoreForMaxDifficulty = 100; // Higher = easier
+const scoreForMaxDifficulty = 300; // Higher = easier
+const msToShowFired = 250;
 
 function scaledMsPerIteration() {
   return Math.max(
@@ -106,15 +66,13 @@ var obstacles = [];
 Determines if a target has been hit by the player.
   If any were hit, they are removed from the targets
   array and the score is increased (or health if the
-  target was a heart). Also plays a laser sound if
-  the player fired.
+  target was a heart).
 */
 function targetHit() {
   if (spacePressed) {
-    if (audio) {
-      laserSound.play();
-    }
     setSpacePressed(false);
+    showFired = true;
+    timeFired = Date.now();
     for (var i = 0; i < targets.length; i++) {
       if (
         targets[i].yPosition === playerYposition &&
@@ -135,8 +93,7 @@ function targetHit() {
 /*
 Determines if a player contacted any obstacles.
   If so, health is decreased, the obstacle can
-  no longer harm the player, and a damage sound
-  effect will be played.
+  no longer harm the player.
 */
 function obstacleHit() {
   for (var i = 0; i < obstacles.length; i++) {
@@ -147,9 +104,6 @@ function obstacleHit() {
     ) {
       health--;
       obstacles[i].hasDetected = true;
-      if (audio) {
-        damageTakenSound.play();
-      }
     }
   }
 }
@@ -204,6 +158,9 @@ function tick(lastTime) {
   let now = Date.now();
   let timeChange = now - lastTime;
   let msThreshold = iterationsPerSpawn * scaledMsPerIteration();
+  if (showFired && now - timeFired > msToShowFired) {
+    showFired = false;
+  }
   if (count >= msThreshold) {
     spawn(Math.floor(Math.random() * 11), obstacles, targets);
     count = count % msThreshold;
@@ -215,18 +172,9 @@ function tick(lastTime) {
   obstacleHit();
   move();
   moveTargetsAndObstacles(timeChange);
-  updateUI(
-    obstacles,
-    targets,
-    health,
-    audio,
-    song.volume,
-    score,
-    playerYposition
-  );
+  updateUI(obstacles, targets, health, score, playerYposition, showFired);
   animation = requestAnimationFrame(() => tick(now));
   checkForGameOver();
-  // manageMusic();
 }
 
 /*
@@ -243,11 +191,9 @@ function pregame() {
   if (spacePressed) {
     drawBackground(true);
     drawHealth(true, health);
-    drawAudio(true, audio, song.volume);
     drawScore(true, score);
     drawPlayer(true, playerYposition);
     drawBorder(true);
-    song.play();
     cancelAnimationFrame(animation);
     animation = requestAnimationFrame(() => tick(Date.now()));
     setSpacePressed(false);
@@ -275,7 +221,6 @@ Checks if the player has lost all their health.
 function checkForGameOver() {
   if (health <= 0) {
     clearCanvases();
-    drawAudio(true, audio, song.volume);
     var newHighScore = checkHighScore();
     cancelAnimationFrame(animation);
     animation = requestAnimationFrame(() => gameOver(newHighScore));
@@ -289,11 +234,9 @@ The code that runs after a player has lost all health.
 newHighScore: True if new high score set. False otherwise.
 */
 function gameOver(newHighScore) {
-  // manageMusic();
   var updated = updateUIVariables();
 
   drawGameOver(score, newHighScore);
-  drawAudio(updated, audio, song.volume);
 
   animation = requestAnimationFrame(() => gameOver(newHighScore));
 

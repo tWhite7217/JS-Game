@@ -6,11 +6,13 @@ Contains the UI code for the JavaScript game, including all
 */
 
 const outlineWidth = 4;
+const playerLineWidth = 2;
+const sqrt2 = Math.SQRT2;
 
 export var canvasWidth;
 export var canvasHeight;
 export var gameWidth;
-var uiElementsRadius;
+export var uiElementsRadius;
 var baseTargetRadius;
 var maxTargetRadius;
 var targetRadiusStep;
@@ -25,9 +27,7 @@ var scoreYposition;
 var healthXposition;
 var healthXdistance;
 var healthYposition;
-var soundXposition;
-export var soundYposition;
-var musicCreditXposition;
+export var githubTextYposition;
 var pregameFont;
 var pregameLeftTextX;
 var pregameLineSpacing;
@@ -37,23 +37,14 @@ export var playerXPosition;
 var prevY = 2;
 var prevHealth = 3;
 var prevScore = 0;
-var prevAudio;
-var prevVolume;
+var prevShowFired = false;
+
+const innerRadiusMultiplier = 1.3;
+const outerRadiusMultiplier = 1.8;
 
 const heartImage = document.getElementById("heart");
-const musicImage = document.getElementById("music note");
-const speakerImage = document.getElementById("speaker symbol");
-const noImage = document.getElementById("no symbol");
 
-var canvasIds = [
-  "back",
-  "health",
-  "audio",
-  "score",
-  "circles",
-  "player",
-  "border",
-];
+var canvasIds = ["back", "health", "score", "circles", "player", "border"];
 var canvases = {};
 var ctxs = {};
 
@@ -242,80 +233,6 @@ export function drawHealth(updated, health) {
 }
 
 /*
-Draws the canvas that shows the game's audio settings. Only
-  draws if the canvas size or audio settings have changed.
-updated: True if the canvas size has changed. False otherwise.
-audio: True if sound effects are enabled. False otherwise.
-volume: True if music are enabled. False otherwise.
-*/
-export function drawAudio(updated, audio, volume) {
-  if (updated || audio !== prevAudio || volume !== prevVolume) {
-    ctxs["audio"].clearRect(0, 0, canvasWidth, canvasWidth);
-
-    // Draws text crediting the music and pointing to the GitHub
-    ctxs["audio"].fillStyle = "rgb(255, 255, 255)";
-    ctxs["audio"].font = `${gameWidth / 24}px courier`;
-    //   ctxs["audio"].fillText("v0.2", 30, soundYposition);
-    ctxs["audio"].fillText(
-      "Music: bensound.com",
-      musicCreditXposition,
-      soundYposition * 1.5
-    );
-    ctxs["audio"].fillText(
-      "Credits: github.com/tWhite7217/JS-Game",
-      gameXoffset + gameWidth / 40,
-      canvasHeight - soundYposition
-    );
-
-    // Draws letters showing how to toggle music and sound effects
-    ctxs["audio"].fillText("m:", soundXposition, soundYposition);
-    ctxs["audio"].fillText(
-      "s:",
-      Math.round(soundXposition + uiElementsRadius * 4),
-      Math.round(soundYposition)
-    );
-
-    // Draws the music and speaker symbols
-    ctxs["audio"].drawImage(
-      musicImage,
-      Math.round(soundXposition + uiElementsRadius),
-      Math.round(soundYposition),
-      Math.round(uiElementsRadius * 2),
-      Math.round(uiElementsRadius * 2)
-    );
-    ctxs["audio"].drawImage(
-      speakerImage,
-      Math.round(soundXposition + uiElementsRadius * 5),
-      Math.round(soundYposition),
-      Math.round(uiElementsRadius * 2),
-      Math.round(uiElementsRadius * 2)
-    );
-
-    // Draws "no" symbols over the audio symbols if they have been muted
-    if (!volume) {
-      ctxs["audio"].drawImage(
-        noImage,
-        Math.round(soundXposition + uiElementsRadius),
-        Math.round(soundYposition),
-        Math.round(uiElementsRadius * 2),
-        Math.round(uiElementsRadius * 2)
-      );
-    }
-    if (!audio) {
-      ctxs["audio"].drawImage(
-        noImage,
-        Math.round(soundXposition + uiElementsRadius * 5),
-        Math.round(soundYposition),
-        Math.round(uiElementsRadius * 2),
-        Math.round(uiElementsRadius * 2)
-      );
-    }
-    prevAudio = audio;
-    prevVolume = volume;
-  }
-}
-
-/*
 Draws the canvas that shows the player's score. Only draws
   if the canvas size or score have changed.
 updated: True if the canvas size has changed. False otherwise.
@@ -341,8 +258,8 @@ Draws the canvas that shows the player's reticle. Only draws
 updated: True if the canvas size has changed. False otherwise.
 playerYposition: The player's current y position.
 */
-export function drawPlayer(updated, playerYposition) {
-  if (updated || playerYposition !== prevY) {
+export function drawPlayer(updated, playerYposition, showFired) {
+  if (updated || playerYposition !== prevY || showFired !== prevShowFired) {
     ctxs["player"].clearRect(0, 0, canvasWidth, canvasHeight);
     ctxs["player"].beginPath();
 
@@ -355,7 +272,6 @@ export function drawPlayer(updated, playerYposition) {
       2 * Math.PI
     );
 
-    // Draws the reticle's perpendicular lines
     ctxs["player"].lineTo(
       Math.round(gameXoffset + playerXPosition - playerRadius),
       Math.round(gameYoffset + playerYposition * laneHeight)
@@ -368,10 +284,54 @@ export function drawPlayer(updated, playerYposition) {
       Math.round(gameXoffset + playerXPosition),
       Math.round(gameYoffset + playerYposition * laneHeight + playerRadius)
     );
+
     ctxs["player"].strokeStyle = "rgb(255, 255, 255)";
+    ctxs["player"].lineWidth = playerLineWidth;
     ctxs["player"].stroke();
     ctxs["player"].closePath();
 
+    ctxs["player"].beginPath();
+
+    if (showFired) {
+      // Draws the lines showing that a shot was fired
+      for (let [xMultiplier, yMultiplier] of [
+        [1, 1],
+        [-1, 1],
+        [-1, -1],
+        [1, -1],
+      ]) {
+        ctxs["player"].moveTo(
+          Math.round(
+            gameXoffset +
+              playerXPosition +
+              ((playerRadius * innerRadiusMultiplier) / sqrt2) * xMultiplier
+          ),
+          Math.round(
+            gameYoffset +
+              playerYposition * laneHeight +
+              ((playerRadius * innerRadiusMultiplier) / sqrt2) * yMultiplier
+          )
+        );
+        ctxs["player"].lineTo(
+          Math.round(
+            gameXoffset +
+              playerXPosition +
+              ((playerRadius * outerRadiusMultiplier) / sqrt2) * xMultiplier
+          ),
+          Math.round(
+            gameYoffset +
+              playerYposition * laneHeight +
+              ((playerRadius * outerRadiusMultiplier) / sqrt2) * yMultiplier
+          )
+        );
+      }
+
+      ctxs["player"].strokeStyle = "rgb(255, 222, 74)";
+      ctxs["player"].stroke();
+      ctxs["player"].closePath();
+    }
+
+    prevShowFired = showFired;
     prevY = playerYposition;
   }
 }
@@ -415,6 +375,16 @@ export function drawBorder(updated) {
     ctxs["border"].lineWidth = outlineWidth;
     ctxs["border"].stroke();
     ctxs["border"].closePath();
+
+    // Draws text pointing to the GitHub
+    ctxs["border"].fillStyle = "rgb(255, 255, 255)";
+    ctxs["border"].font = `${gameWidth / 24}px courier`;
+    // ctxs["border"].fillText("v0.2", 30, githubTextYposition * 1.5);
+    ctxs["border"].fillText(
+      "github.com/tWhite7217/JS-Game",
+      gameXoffset + gameWidth / 8,
+      githubTextYposition
+    );
   }
 }
 
@@ -517,8 +487,6 @@ score: The player's final score.
 obstacles: The array containing all obstacle info.
 targets: The array containing all target info.
 health: The player's current health.
-audio: True if sound effects are enabled. False otherwise.
-volume: True if music are enabled. False otherwise.
 score: The player's current score.
 playerYposition: The player's current y position.
 */
@@ -526,18 +494,16 @@ export function updateUI(
   obstacles,
   targets,
   health,
-  audio,
-  volume,
   score,
-  playerYposition
+  playerYposition,
+  showFired
 ) {
   var updated = updateUIVariables();
 
   drawBackground(updated);
   drawHealth(updated, health);
-  drawAudio(updated, audio, volume);
   drawScore(updated, score);
-  drawPlayer(updated, playerYposition);
+  drawPlayer(updated, playerYposition, showFired);
   drawBorder(updated);
   drawCircles(obstacles, targets);
 }
@@ -577,9 +543,7 @@ export function updateUIVariables() {
     healthXdistance = (gameWidth * 7) / 100;
     healthYposition = gameHeight / 45;
     playerXPosition = (gameWidth * 3) / 20;
-    soundXposition = (canvasWidth * 4) / 5;
-    soundYposition = canvasHeight / 30;
-    musicCreditXposition = canvasWidth / 15;
+    githubTextYposition = canvasHeight / 20;
     pregameFont = gameWidth / 28;
     pregameLeftTextX = canvasWidth / 20;
     pregameLineSpacing = gameWidth / 20;
